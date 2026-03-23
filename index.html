@@ -549,6 +549,7 @@ let pausedTimeRemaining = 0;
 let perfectClears = 0;
 let decryptCharges = 0;
 let decryptUsedThisLevel = false;
+let levelLinesOffset = 0; // reset when grid expands so patterns start short again
 
 // Lines stored as simple [from, to] arrays
 let shownLineSegments = [];
@@ -766,6 +767,7 @@ function checkGridExpansion() {
   if (gridSize >= MAX_GRID_SIZE) return false;
   const uniqueNodes = new Set(pattern);
   if (uniqueNodes.size >= nodes) {
+    levelLinesOffset = level; // reset line count so next level starts with 2 lines
     recalcGrid(gridSize + 1);
     createGrid();
     updateGridHud();
@@ -1339,6 +1341,7 @@ function startGame() {
   perfectClears = 0;
   decryptCharges = 0;
   decryptUsedThisLevel = false;
+  levelLinesOffset = 0;
   recalcGrid(3);
   createGrid();
   updateLives();
@@ -1351,7 +1354,8 @@ function startLevel(lvl) {
   level = lvl;
   repeatUsed = false;
   decryptUsedThisLevel = false;
-  const pat = generatePattern(lvl + 1);
+  const numLines = (lvl - levelLinesOffset) + 1;
+  const pat = generatePattern(numLines);
   pattern = pat;
   updateHud();
   showPatternSequence(pat, enterInputState);
@@ -1786,7 +1790,7 @@ btnRetry.addEventListener('click', () => {
   if (!sfxMuted) audio.click();
   stopMusic();
   score = 0; combo = 0; lives = MAX_LIVES; isNewRecord = false;
-  perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false;
+  perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false; levelLinesOffset = 0;
   paused = false;
   pauseOverlay.classList.remove('active');
   // Clean up new-record elements
