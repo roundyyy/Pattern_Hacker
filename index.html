@@ -153,8 +153,8 @@
   /* Grid - larger base to accommodate expansion */
   .grid-container {
     position: relative;
-    width: min(86vw, 72vh, 380px);
-    height: min(86vw, 72vh, 380px);
+    width: min(92vw, 80vh, 420px);
+    height: min(92vw, 80vh, 420px);
     margin: 4px auto;
     z-index: 2; flex-shrink: 0;
   }
@@ -373,7 +373,7 @@
 
   /* Mobile adjustments */
   @media (max-height: 600px) {
-    .grid-container { width: min(72vw, 56vh, 320px); height: min(72vw, 56vh, 320px); }
+    .grid-container { width: min(82vw, 66vh, 370px); height: min(82vw, 66vh, 370px); }
     .hud { padding: 8px 16px 2px; }
     .status-area { height: 40px; }
     .bottom-bar { height: 48px; }
@@ -840,8 +840,8 @@ let nodeEls = [];
 function createGrid() {
   nodeEls.forEach(n => n.remove());
   nodeEls = [];
-  const nodeSizePct = Math.max(7, 54 / gridSize);
-  const maxPx = Math.round(180 / gridSize);
+  const nodeSizePct = Math.max(5.5, 48 / gridSize);
+  const maxPx = Math.round(160 / gridSize);
 
   for (let idx = 0; idx < nodes; idx++) {
     const pos = nodePositions[idx];
@@ -1653,7 +1653,8 @@ let lastDragNode = -1;
 function getNodeFromPoint(clientX, clientY) {
   const rect = gridContainer.getBoundingClientRect();
   const spacing = rect.width / (gridSize + 1);
-  const tolerance = spacing * (gridSize <= 4 ? 0.28 : 0.32);
+  const toleranceMap = { 3: 0.28, 4: 0.20, 5: 0.16, 6: 0.14 };
+  const tolerance = spacing * (toleranceMap[gridSize] || 0.14);
   for (let i = 0; i < nodes; i++) {
     const p = nodePositions[i];
     const cx = rect.left + spacing * (p.col + 1);
@@ -1694,7 +1695,19 @@ function getNodesOnLineBetween(a, b) {
   return result;
 }
 
-function handleDragNode(node) {
+// Corridor check: is a point within a finger-width band around the line from A to B?
+function isInCorridor(px, py, ax, ay, bx, by, halfWidth) {
+  const dx = bx - ax, dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return false;
+  // perpendicular distance from point to line segment
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  const projX = ax + t * dx, projY = ay + t * dy;
+  const dist = Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
+  return dist <= halfWidth;
+}
+
+function handleDragNode(node, clientX, clientY) {
   if (node < 0 || node === lastDragNode || state !== 'input' || paused) return;
   lastDragNode = node;
   const nextIndex = userPattern.length;
@@ -1707,11 +1720,27 @@ function handleDragNode(node) {
     return;
   }
 
-  if (nextIndex > 0) {
+  // Skip non-target nodes the finger passes through while dragging
+  if (nextIndex > 0 && isDragging) {
     const lastConfirmed = pattern[nextIndex - 1];
+
+    // Original grid-aligned passthrough check
     const passThrough = getNodesOnLineBetween(lastConfirmed, expectedNode);
-    if (passThrough.has(node)) {
-      return;
+    if (passThrough.has(node)) return;
+
+    // Corridor check: if finger is within a corridor toward the expected node, ignore this dot
+    if (clientX !== undefined) {
+      const rect = gridContainer.getBoundingClientRect();
+      const spacing = rect.width / (gridSize + 1);
+      const pLast = nodePositions[lastConfirmed];
+      const pNext = nodePositions[expectedNode];
+      const ax = rect.left + spacing * (pLast.col + 1);
+      const ay = rect.top + spacing * (pLast.row + 1);
+      const bx = rect.left + spacing * (pNext.col + 1);
+      const by = rect.top + spacing * (pNext.row + 1);
+      // Corridor half-width: ~12mm finger width scaled to screen
+      const corridorHalf = spacing * 0.38;
+      if (isInCorridor(clientX, clientY, ax, ay, bx, by, corridorHalf)) return;
     }
   }
 
@@ -1747,13 +1776,13 @@ gridContainer.addEventListener('mousedown', (e) => {
   isDragging = true;
   lastDragNode = -1;
   const node = getNodeFromPoint(e.clientX, e.clientY);
-  if (node >= 0) handleDragNode(node);
+  if (node >= 0) handleDragNode(node, e.clientX, e.clientY);
   updateDragTrail(e.clientX, e.clientY);
 });
 gridContainer.addEventListener('mousemove', (e) => {
   if (!isDragging || state !== 'input' || paused) return;
   const node = getNodeFromPoint(e.clientX, e.clientY);
-  if (node >= 0) handleDragNode(node);
+  if (node >= 0) handleDragNode(node, e.clientX, e.clientY);
   updateDragTrail(e.clientX, e.clientY);
 });
 gridContainer.addEventListener('mouseup', handleRelease);
@@ -1767,7 +1796,7 @@ gridContainer.addEventListener('touchstart', (e) => {
   lastDragNode = -1;
   const t = e.touches[0];
   const node = getNodeFromPoint(t.clientX, t.clientY);
-  if (node >= 0) handleDragNode(node);
+  if (node >= 0) handleDragNode(node, t.clientX, t.clientY);
   updateDragTrail(t.clientX, t.clientY);
 }, { passive: false });
 gridContainer.addEventListener('touchmove', (e) => {
@@ -1775,7 +1804,7 @@ gridContainer.addEventListener('touchmove', (e) => {
   if (!isDragging || state !== 'input' || paused) return;
   const t = e.touches[0];
   const node = getNodeFromPoint(t.clientX, t.clientY);
-  if (node >= 0) handleDragNode(node);
+  if (node >= 0) handleDragNode(node, t.clientX, t.clientY);
   updateDragTrail(t.clientX, t.clientY);
 }, { passive: false });
 gridContainer.addEventListener('touchend', (e) => {
