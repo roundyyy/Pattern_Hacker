@@ -342,7 +342,7 @@
       Each level adds one more line.<br>
       You have 3 lives. Be fast for bonus points!
     </p>
-    <div class="record-badge invisible" id="splash-record">BEST: LEVEL <span id="splash-record-val">0</span></div>
+    <div class="record-badge invisible" id="splash-record">BEST: <span id="splash-record-val">0</span></div>
     <button class="btn-main" id="btn-start">JACK IN</button>
     <div style="display:flex;gap:10px;align-items:center">
       <button class="btn-small" id="btn-mute-sfx-splash">🔊 SFX ON</button>
@@ -557,7 +557,7 @@ function loadHighScore() {
   try { highScore = parseInt(localStorage.getItem('ph-highscore') || '0', 10) || 0; } catch {}
   if (highScore > 0) {
     document.getElementById('splash-record').classList.remove('invisible');
-    document.getElementById('splash-record-val').textContent = highScore;
+    document.getElementById('splash-record-val').textContent = highScore.toLocaleString();
   }
 }
 function saveHighScore(val) {
@@ -728,37 +728,49 @@ function resetAllNodes() {
   for (let i = 0; i < NODES; i++) updateNode(i);
 }
 
-// Render lines: all in baseColor, overlapping segments in overlapColor
+// Render lines in two passes:
+// 1) All segments in baseColor
+// 2) Segments that are overlaps get a second line on top in overlapColor, offset + dashed
 function renderLines(segments, baseColor, overlapColor, overlaps, width = 3, opacity = 1) {
   let html = '';
-  // Track which segments we've already drawn once
   const drawn = {};
+
+  // Pass 1: draw all lines in base color
   segments.forEach(([from, to]) => {
     const a = getNodeCenter(from);
     const b = getNodeCenter(to);
-    const key = segmentKey(from, to);
-    const isOverlap = overlaps.has(key);
-    const count = drawn[key] || 0;
-    drawn[key] = count + 1;
+    html += `<line x1="${a.x}%" y1="${a.y}%" x2="${b.x}%" y2="${b.y}%"
+      stroke="${baseColor}" stroke-width="${width}" stroke-linecap="round" opacity="${opacity}"
+      style="filter:drop-shadow(0 0 4px ${baseColor})"/>`;
 
-    let color = baseColor;
-    let w = width;
-    let ox = 0, oy = 0;
-    if (isOverlap && count > 0) {
-      // This is a repeated traversal — draw in overlap color, offset slightly
-      color = overlapColor;
-      w = width + 0.5;
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const len = Math.sqrt(dx * dx + dy * dy) || 1;
-      // Perpendicular offset in SVG percentage units (small amount)
-      ox = (-dy / len) * 1.8 * count;
-      oy = (dx / len) * 1.8 * count;
-    }
-    html += `<line x1="${a.x + ox}%" y1="${a.y + oy}%" x2="${b.x + ox}%" y2="${b.y + oy}%"
-      stroke="${color}" stroke-width="${w}" stroke-linecap="round" opacity="${opacity}"
-      style="filter:drop-shadow(0 0 4px ${color})"/>`;
+    const key = segmentKey(from, to);
+    drawn[key] = (drawn[key] || 0) + 1;
   });
+
+  // Pass 2: for each segment drawn more than once, overlay in overlap color with offset
+  const overlapDrawn = {};
+  segments.forEach(([from, to]) => {
+    const key = segmentKey(from, to);
+    if (!overlaps.has(key)) return;
+    const count = overlapDrawn[key] || 0;
+    overlapDrawn[key] = count + 1;
+    if (count === 0) return; // first occurrence stays base color
+
+    const a = getNodeCenter(from);
+    const b = getNodeCenter(to);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const offset = 2.5 * count;
+    const ox = (-dy / len) * offset;
+    const oy = (dx / len) * offset;
+
+    html += `<line x1="${a.x + ox}%" y1="${a.y + oy}%" x2="${b.x + ox}%" y2="${b.y + oy}%"
+      stroke="${overlapColor}" stroke-width="${width + 1}" stroke-linecap="round" opacity="${opacity}"
+      stroke-dasharray="6 4"
+      style="filter:drop-shadow(0 0 6px ${overlapColor})"/>`;
+  });
+
   return html;
 }
 
@@ -768,16 +780,15 @@ function renderSvg() {
     const overlaps = findOverlappingSegments(pattern);
     svg += renderLines(shownLineSegments, '#00ddff', OVERLAP_COLOR_SHOW, overlaps, 3, 0.9);
   } else if (state === 'input' || state === 'success') {
-    const overlaps = findOverlappingSegments(userPattern);
+    // Use full pattern's overlaps so user sees which segments are overlapping
+    const overlaps = findOverlappingSegments(pattern);
     svg += renderLines(userLineSegments, '#00ff88', OVERLAP_COLOR_USER, overlaps, 3, 0.9);
   } else if (state === 'fail' || state === 'gameover') {
-    // Build correct lines from full pattern
     const correctSegs = [];
     for (let i = 1; i < pattern.length; i++) correctSegs.push([pattern[i-1], pattern[i]]);
     const overlaps = findOverlappingSegments(pattern);
     svg += renderLines(correctSegs, '#ff3355', '#cc2266', overlaps, 2, 0.3);
-    const userOverlaps = findOverlappingSegments(userPattern);
-    svg += renderLines(userLineSegments, '#ff3355', '#cc2266', userOverlaps, 3, 0.6);
+    svg += renderLines(userLineSegments, '#ff3355', '#cc2266', overlaps, 3, 0.6);
   }
   gridSvg.innerHTML = svg;
 }
@@ -793,7 +804,7 @@ function updateLives() {
 function updateHud() {
   hudLevel.textContent = level;
   hudScore.textContent = score.toLocaleString();
-  hudBest.textContent = highScore;
+  hudBest.textContent = highScore.toLocaleString();
   const colors = { showing: '#00ddff', success: '#00ff88', fail: '#ff3355', gameover: '#ff3355' };
   hudLevel.style.color = colors[state] || '#00ff88';
 }
@@ -938,7 +949,7 @@ function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, time
   </div>`;
 
   if (newRecord) {
-    html += `<div class="score-record" style="${d(100)}">★ NEW RECORD: LEVEL ${levelNum} ★</div>`;
+    html += `<div class="score-record" style="${d(100)}">★ NEW HIGH SCORE ★</div>`;
   }
 
   html += `<button class="score-btn" id="score-continue-btn" style="${d(150)}">CONTINUE ▶</button>`;
@@ -1117,13 +1128,12 @@ function handleNodeClick(idx) {
     glitchText(statusText, 'ACCESS GRANTED');
     statusText.style.color = '#00ff88';
 
-    const maxReachedLevel = level;
     let isNewRec = false;
-    if (maxReachedLevel > highScore) {
-      highScore = maxReachedLevel;
+    if (score > highScore) {
+      highScore = score;
       isNewRecord = true;
       isNewRec = true;
-      saveHighScore(maxReachedLevel);
+      saveHighScore(score);
       if (!sfxMuted) setTimeout(() => audio.newRecord(), 400);
     } else if (!sfxMuted) {
       setTimeout(() => audio.levelUp(), 300);
@@ -1193,10 +1203,10 @@ function handleFail(idx) {
     glitchText(statusText, 'SYSTEM BREACH FAILED');
     statusText.style.color = '#ff3355';
 
-    if (level > highScore) {
-      highScore = level;
+    if (score > highScore) {
+      highScore = score;
       isNewRecord = true;
-      saveHighScore(level);
+      saveHighScore(score);
     }
 
     setTimeout(() => {
@@ -1204,7 +1214,7 @@ function handleFail(idx) {
         const rec = document.createElement('div');
         rec.className = 'new-record';
         rec.style.color = '#ffcc00';
-        rec.textContent = `★ NEW RECORD: LEVEL ${highScore} ★`;
+        rec.textContent = `★ NEW RECORD: ${highScore.toLocaleString()} ★`;
         statusText.parentElement.appendChild(rec);
       }
     }, 300);
@@ -1248,6 +1258,8 @@ function handleRepeat() {
 }
 
 // ─── TOUCH / DRAG ───
+let lastDragNode = -1; // tracks last node finger/mouse passed through
+
 function getNodeFromPoint(clientX, clientY) {
   const rect = gridContainer.getBoundingClientRect();
   const spacing = rect.width / (GRID_SIZE + 1);
@@ -1262,48 +1274,54 @@ function getNodeFromPoint(clientX, clientY) {
   return -1;
 }
 
+// During drag, only register the correct next node — skip wrong ones silently.
+// This is needed because when drawing a line from e.g. node 0 to node 8,
+// the finger physically passes through node 4 in between.
+function handleDragNode(node) {
+  if (node < 0 || node === lastDragNode || state !== 'input') return;
+  lastDragNode = node;
+  const nextIndex = userPattern.length;
+  if (nextIndex < pattern.length && pattern[nextIndex] === node) {
+    handleNodeClick(node);
+  }
+  // Wrong node during drag = silently ignored (finger passing through)
+}
+
 gridContainer.addEventListener('mousedown', (e) => {
   if (state !== 'input') return;
   isDragging = true;
+  lastDragNode = -1;
   const node = getNodeFromPoint(e.clientX, e.clientY);
-  if (node >= 0 && userPattern.length === 0) handleNodeClick(node);
+  if (node >= 0) handleDragNode(node);
 });
 gridContainer.addEventListener('mousemove', (e) => {
   if (!isDragging || state !== 'input') return;
   const node = getNodeFromPoint(e.clientX, e.clientY);
-  if (node >= 0) {
-    const nextIndex = userPattern.length;
-    if (nextIndex < pattern.length && pattern[nextIndex] === node) {
-      handleNodeClick(node);
-    }
-  }
+  if (node >= 0) handleDragNode(node);
 });
-gridContainer.addEventListener('mouseup', () => isDragging = false);
-gridContainer.addEventListener('mouseleave', () => isDragging = false);
+gridContainer.addEventListener('mouseup', () => { isDragging = false; lastDragNode = -1; });
+gridContainer.addEventListener('mouseleave', () => { isDragging = false; lastDragNode = -1; });
 
 gridContainer.addEventListener('touchstart', (e) => {
   e.preventDefault();
   if (state !== 'input') return;
   isDragging = true;
+  lastDragNode = -1;
   const t = e.touches[0];
   const node = getNodeFromPoint(t.clientX, t.clientY);
-  if (node >= 0 && userPattern.length === 0) handleNodeClick(node);
+  if (node >= 0) handleDragNode(node);
 }, { passive: false });
 gridContainer.addEventListener('touchmove', (e) => {
   e.preventDefault();
   if (!isDragging || state !== 'input') return;
   const t = e.touches[0];
   const node = getNodeFromPoint(t.clientX, t.clientY);
-  if (node >= 0) {
-    const nextIndex = userPattern.length;
-    if (nextIndex < pattern.length && pattern[nextIndex] === node) {
-      handleNodeClick(node);
-    }
-  }
+  if (node >= 0) handleDragNode(node);
 }, { passive: false });
 gridContainer.addEventListener('touchend', (e) => {
   e.preventDefault();
   isDragging = false;
+  lastDragNode = -1;
 }, { passive: false });
 
 // ─── BUTTON HANDLERS ───
