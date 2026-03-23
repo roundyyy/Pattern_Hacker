@@ -94,18 +94,18 @@
     display: flex; justify-content: space-between; width: 100%; max-width: 400px;
     padding: 12px 16px 4px; z-index: 2;
   }
-  .hud-cell { text-align: center; min-width: 60px; }
+  .hud-cell { text-align: center; min-width: 50px; }
   .hud-cell:first-child { text-align: left; }
   .hud-cell:last-child { text-align: right; }
   .hud-label { font-size: 0.55rem; letter-spacing: 0.2em; color: #00ff8866; margin-bottom: 2px; }
-  .hud-value { font-size: clamp(1rem, 3.5vw, 1.4rem); font-weight: 700; color: #00ff88; text-shadow: 0 0 8px #00ff8844; }
+  .hud-value { font-size: clamp(0.9rem, 3.2vw, 1.3rem); font-weight: 700; color: #00ff88; text-shadow: 0 0 8px #00ff8844; }
 
   /* Lives */
   .lives { display: flex; gap: 4px; justify-content: center; height: 22px; align-items: center; z-index: 2; }
   .life { font-size: 1rem; transition: all 0.3s; }
   .life.lost { opacity: 0.2; filter: grayscale(1); }
 
-  /* Info bar — FIXED HEIGHT */
+  /* Info bar */
   .info-bar {
     display: flex; align-items: center; justify-content: center; gap: 12px;
     padding: 4px 0; z-index: 2; height: 28px; flex-shrink: 0;
@@ -113,8 +113,12 @@
   .combo-badge {
     padding: 2px 12px; background: #00ff8815; border: 1px solid #00ff8833;
     border-radius: 20px; font-size: 0.7rem; letter-spacing: 0.2em; color: #00ff88; font-weight: 700;
+    transition: all 0.3s;
   }
   .combo-badge.invisible { visibility: hidden; }
+  .combo-badge.milestone-3 { border-color: #00ddff; color: #00ddff; background: #00ddff15; }
+  .combo-badge.milestone-5 { border-color: #ffcc00; color: #ffcc00; background: #ffcc0015; }
+  .combo-badge.milestone-10 { border-color: #ff66ff; color: #ff66ff; background: #ff66ff15; text-shadow: 0 0 8px #ff66ff66; }
   .timer-display {
     font-size: 0.75rem; letter-spacing: 0.1em; color: #00ddff; font-weight: 700;
   }
@@ -122,7 +126,7 @@
   .timer-display.danger { color: #ff3355; animation: pulse 0.5s ease-in-out infinite; }
   .timer-display.invisible { visibility: hidden; }
 
-  /* Bonus info — FIXED HEIGHT */
+  /* Bonus info */
   .bonus-bar {
     height: 18px; display: flex; align-items: center; justify-content: center; z-index: 2; flex-shrink: 0;
   }
@@ -131,7 +135,7 @@
   }
   .bonus-info.invisible { visibility: hidden; }
 
-  /* Status — FIXED HEIGHT */
+  /* Status */
   .status-area {
     height: 52px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; z-index: 2; padding: 2px 8px;
@@ -146,11 +150,11 @@
     position: absolute; bottom: 0;
   }
 
-  /* Grid */
+  /* Grid - larger base to accommodate expansion */
   .grid-container {
     position: relative;
-    width: min(78vw, 64vh, 340px);
-    height: min(78vw, 64vh, 340px);
+    width: min(86vw, 72vh, 380px);
+    height: min(86vw, 72vh, 380px);
     margin: 4px auto;
     z-index: 2; flex-shrink: 0;
   }
@@ -159,7 +163,6 @@
   }
   .node {
     position: absolute; border-radius: 50%;
-    width: 18%; height: 18%; max-width: 60px; max-height: 60px;
     display: flex; align-items: center; justify-content: center;
     transition: all 0.15s ease-out; cursor: default; z-index: 2;
     touch-action: none;
@@ -168,7 +171,7 @@
     width: 30%; height: 30%; border-radius: 50%; transition: all 0.15s ease-out;
   }
 
-  /* Progress dots — FIXED HEIGHT */
+  /* Progress dots */
   .progress-dots {
     display: flex; gap: 6px; justify-content: center; align-items: center;
     height: 24px; z-index: 2; flex-shrink: 0; flex-wrap: wrap; padding: 0 20px;
@@ -178,10 +181,10 @@
   }
   .dot.filled { background: #00ff88; box-shadow: 0 0 6px #00ff88; }
 
-  /* Bottom bar — FIXED HEIGHT */
+  /* Bottom bar */
   .bottom-bar {
     display: flex; align-items: center; justify-content: center;
-    gap: 10px; height: 56px; z-index: 2; flex-shrink: 0;
+    gap: 8px; height: 56px; z-index: 2; flex-shrink: 0; flex-wrap: wrap;
   }
   .btn-repeat {
     background: transparent; border: 1px solid #00ddff55; border-radius: 4px;
@@ -193,7 +196,62 @@
   .btn-repeat:disabled { opacity: 0.3; cursor: not-allowed; }
   .btn-main.invisible { visibility: hidden; pointer-events: none; }
 
-  /* ─── SCORE MODAL ─── */
+  /* Decrypt button */
+  .btn-decrypt {
+    background: transparent; border: 1px solid #ffcc0055; border-radius: 4px;
+    padding: 6px 14px; color: #ffcc00aa; font-size: 0.65rem; cursor: pointer;
+    font-family: 'Courier New', monospace; letter-spacing: 0.1em; transition: all 0.2s;
+  }
+  .btn-decrypt.invisible { visibility: hidden; pointer-events: none; }
+  .btn-decrypt:hover { border-color: #ffcc00; color: #ffcc00; }
+  .btn-decrypt:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Combo flash overlay */
+  .combo-flash {
+    position: absolute; inset: 0; z-index: 50; pointer-events: none;
+    opacity: 0; transition: opacity 0.4s ease-out;
+    border: 3px solid transparent; border-radius: 0;
+  }
+  .combo-flash.active { opacity: 1; }
+  .combo-flash.green { background: radial-gradient(ellipse at center, #00ff8818 0%, transparent 70%); border-color: #00ff8844; }
+  .combo-flash.cyan { background: radial-gradient(ellipse at center, #00ddff22 0%, transparent 70%); border-color: #00ddff66; }
+  .combo-flash.gold { background: radial-gradient(ellipse at center, #ffcc0022 0%, transparent 70%); border-color: #ffcc0066; }
+  .combo-flash.pink { background: radial-gradient(ellipse at center, #ff66ff22 0%, transparent 70%); border-color: #ff66ff66; }
+
+  /* Pause overlay */
+  .pause-overlay {
+    display: none;
+    position: absolute; inset: 0; z-index: 90;
+    background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 20px;
+    animation: overlayIn 0.2s ease-out;
+  }
+  .pause-overlay.active { display: flex; }
+  .pause-title {
+    font-size: 1.8rem; font-weight: 700; letter-spacing: 0.4em;
+    color: #00ff88; text-shadow: 0 0 20px #00ff8866;
+  }
+  .pause-sub {
+    font-size: 0.7rem; color: #00ff8866; letter-spacing: 0.15em;
+  }
+
+  /* Grid expand notification */
+  .grid-expand-notify {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 60; pointer-events: none; text-align: center;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .grid-expand-notify.active { opacity: 1; }
+  .grid-expand-text {
+    font-size: 1.2rem; font-weight: 700; letter-spacing: 0.3em;
+    color: #00ddff; text-shadow: 0 0 20px #00ddff88;
+  }
+  .grid-expand-sub {
+    font-size: 0.7rem; color: #00ddff88; letter-spacing: 0.15em; margin-top: 4px;
+  }
+
+  /* Score modal */
   .score-overlay {
     display: none;
     position: absolute; inset: 0; z-index: 100;
@@ -307,10 +365,15 @@
     20%, 60% { transform: translateX(-4px); }
     40%, 80% { transform: translateX(4px); }
   }
+  @keyframes comboPopIn {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
 
   /* Mobile adjustments */
   @media (max-height: 600px) {
-    .grid-container { width: min(65vw, 50vh, 280px); height: min(65vw, 50vh, 280px); }
+    .grid-container { width: min(72vw, 56vh, 320px); height: min(72vw, 56vh, 320px); }
     .hud { padding: 8px 16px 2px; }
     .status-area { height: 40px; }
     .bottom-bar { height: 48px; }
@@ -322,6 +385,9 @@
 
 <div id="game">
   <div class="scanlines"></div>
+
+  <!-- COMBO FLASH -->
+  <div class="combo-flash" id="combo-flash"></div>
 
   <!-- SPLASH SCREEN -->
   <div id="splash">
@@ -345,8 +411,8 @@
     <div class="record-badge invisible" id="splash-record">BEST: <span id="splash-record-val">0</span></div>
     <button class="btn-main" id="btn-start">JACK IN</button>
     <div style="display:flex;gap:10px;align-items:center">
-      <button class="btn-small" id="btn-mute-sfx-splash">🔊 SFX ON</button>
-      <button class="btn-small" id="btn-mute-music-splash">🎵 MUSIC ON</button>
+      <button class="btn-small" id="btn-mute-sfx-splash">SFX ON</button>
+      <button class="btn-small" id="btn-mute-music-splash">MUSIC ON</button>
     </div>
   </div>
 
@@ -362,6 +428,10 @@
         <div class="hud-value" id="hud-score">0</div>
       </div>
       <div class="hud-cell">
+        <div class="hud-label">GRID</div>
+        <div class="hud-value" id="hud-grid">3x3</div>
+      </div>
+      <div class="hud-cell">
         <div class="hud-label">BEST</div>
         <div class="hud-value" id="hud-best" style="color:#ffcc00">0</div>
       </div>
@@ -371,7 +441,7 @@
 
     <div class="info-bar">
       <div class="combo-badge invisible" id="combo-badge">x1 COMBO</div>
-      <div class="timer-display invisible" id="timer-display">⏱ 10.0s</div>
+      <div class="timer-display invisible" id="timer-display">10.0s</div>
     </div>
 
     <div class="bonus-bar">
@@ -386,13 +456,28 @@
       <svg class="grid-svg" id="grid-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
 
+    <!-- Grid expand notification -->
+    <div class="grid-expand-notify" id="grid-expand-notify">
+      <div class="grid-expand-text" id="grid-expand-text">GRID EXPANDED: 4x4</div>
+      <div class="grid-expand-sub">NEW NODES UNLOCKED</div>
+    </div>
+
     <div class="progress-dots" id="progress-dots"></div>
 
     <div class="bottom-bar" id="bottom-bar">
-      <button class="btn-repeat invisible" id="btn-repeat">🔄 SHOW AGAIN</button>
+      <button class="btn-decrypt invisible" id="btn-decrypt">DECRYPT (0)</button>
+      <button class="btn-repeat invisible" id="btn-repeat">SHOW AGAIN</button>
       <button class="btn-main invisible" id="btn-retry">RETRY</button>
-      <button class="btn-icon" id="btn-mute-sfx">🔊</button>
-      <button class="btn-icon" id="btn-mute-music">🎵</button>
+      <button class="btn-icon" id="btn-pause">&#x23F8;</button>
+      <button class="btn-icon" id="btn-mute-sfx">SFX</button>
+      <button class="btn-icon" id="btn-mute-music">MUS</button>
+    </div>
+
+    <!-- Pause overlay -->
+    <div class="pause-overlay" id="pause-overlay">
+      <div class="pause-title">PAUSED</div>
+      <div class="pause-sub">SYSTEM STANDBY</div>
+      <button class="btn-main" id="btn-resume">RESUME</button>
     </div>
 
     <!-- Score overlay -->
@@ -404,12 +489,7 @@
 
 <script>
 // ─── CONFIG ───
-const GRID_SIZE = 3;
-const NODES = GRID_SIZE * GRID_SIZE;
-const NODE_POSITIONS = Array.from({ length: NODES }, (_, i) => ({
-  row: Math.floor(i / GRID_SIZE),
-  col: i % GRID_SIZE,
-}));
+const MAX_GRID_SIZE = 6;
 const SHOW_DELAY_BASE = 700;
 const SHOW_DELAY_MIN = 350;
 const SHOW_DELAY_DECAY = 25;
@@ -417,10 +497,30 @@ const MAX_LIVES = 3;
 const BASE_TIME_LIMIT = 12;
 const TIME_PER_NODE = 2.5;
 const PERFECT_TIME_RATIO = 0.4;
+const DECRYPT_EVERY_N_PERFECT = 3;
+const DECRYPT_HINT_NODES = 3;
 
-// Overlap line color — used when a segment is traversed more than once
 const OVERLAP_COLOR_SHOW = '#ff66ff';
 const OVERLAP_COLOR_USER = '#ff66ff';
+
+// ─── DYNAMIC GRID STATE ───
+let gridSize = 3;
+let nodes = gridSize * gridSize;
+let nodePositions = computeNodePositions(gridSize);
+
+function computeNodePositions(gs) {
+  const n = gs * gs;
+  return Array.from({ length: n }, (_, i) => ({
+    row: Math.floor(i / gs),
+    col: i % gs,
+  }));
+}
+
+function recalcGrid(newSize) {
+  gridSize = newSize;
+  nodes = gridSize * gridSize;
+  nodePositions = computeNodePositions(gridSize);
+}
 
 // ─── STATE ───
 let state = 'idle';
@@ -443,11 +543,21 @@ let timeRemaining = 0;
 let timeLimitForLevel = 0;
 let showTimer = null;
 let isDragging = false;
-let pendingNextLevel = null; // timeout for auto-advancing after score panel
+let pendingNextLevel = null;
+let paused = false;
+let pausedTimeRemaining = 0;
+let perfectClears = 0;
+let decryptCharges = 0;
+let decryptUsedThisLevel = false;
 
 // Lines stored as simple [from, to] arrays
 let shownLineSegments = [];
 let userLineSegments = [];
+
+// Drag trail state
+let dragTrailActive = false;
+let dragTrailX = 0;
+let dragTrailY = 0;
 
 // ─── AUDIO ENGINE ───
 class AudioEngine {
@@ -474,13 +584,13 @@ class AudioEngine {
     osc.stop(now + duration);
   }
   nodeShow(index) {
-    const freqs = [261, 293, 329, 349, 392, 440, 493, 523, 587];
-    this._play(freqs[index % 9], 0.3, 'sine', 0.12);
-    this._play(freqs[index % 9] * 1.5, 0.2, 'triangle', 0.05);
+    const freq = 261 * Math.pow(2, (index % 12) / 12);
+    this._play(freq, 0.3, 'sine', 0.12);
+    this._play(freq * 1.5, 0.2, 'triangle', 0.05);
   }
   nodeInput(index) {
-    const freqs = [261, 293, 329, 349, 392, 440, 493, 523, 587];
-    this._play(freqs[index % 9], 0.15, 'square', 0.06);
+    const freq = 261 * Math.pow(2, (index % 12) / 12);
+    this._play(freq, 0.15, 'square', 0.06);
   }
   success() {
     [0, 100, 200].forEach((d, i) =>
@@ -506,8 +616,29 @@ class AudioEngine {
     this._play(200, 0.3, 'sawtooth', 0.1);
     setTimeout(() => this._play(150, 0.4, 'square', 0.08), 150);
   }
+  gridExpand() {
+    [0, 80, 160, 240, 360].forEach((d, i) =>
+      setTimeout(() => this._play(330 * (1 + i * 0.2), 0.3, 'triangle', 0.1), d)
+    );
+  }
+  decrypt() {
+    [0, 60, 120].forEach((d, i) =>
+      setTimeout(() => this._play(600 + i * 100, 0.15, 'sine', 0.08), d)
+    );
+  }
+  comboMilestone(tier) {
+    const base = tier >= 10 ? 660 : tier >= 5 ? 550 : 440;
+    [0, 60, 120, 200].forEach((d, i) =>
+      setTimeout(() => this._play(base + i * 80, 0.2, 'triangle', 0.1), d)
+    );
+  }
 }
 const audio = new AudioEngine();
+
+// ─── HAPTIC ───
+function haptic(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
 
 // ─── MUSIC ENGINE ───
 let musicAudio = null;
@@ -540,14 +671,14 @@ function toggleSfx() {
   updateSfxButtons();
 }
 function updateMusicButtons() {
-  const label = musicMuted ? '🎵 MUSIC OFF' : '🎵 MUSIC ON';
-  const icon = musicMuted ? '🚫' : '🎵';
+  const label = musicMuted ? 'MUSIC OFF' : 'MUSIC ON';
+  const icon = musicMuted ? 'MUT' : 'MUS';
   document.getElementById('btn-mute-music-splash').textContent = label;
   document.getElementById('btn-mute-music').textContent = icon;
 }
 function updateSfxButtons() {
-  const label = sfxMuted ? '🔇 SFX OFF' : '🔊 SFX ON';
-  const icon = sfxMuted ? '🔇' : '🔊';
+  const label = sfxMuted ? 'SFX OFF' : 'SFX ON';
+  const icon = sfxMuted ? 'OFF' : 'SFX';
   document.getElementById('btn-mute-sfx-splash').textContent = label;
   document.getElementById('btn-mute-sfx').textContent = icon;
 }
@@ -565,7 +696,6 @@ function saveHighScore(val) {
 }
 
 // ─── SEGMENT OVERLAP DETECTION ───
-// Returns a Set of segment keys that appear more than once in a pattern
 function segmentKey(a, b) {
   return a < b ? `${a}-${b}` : `${b}-${a}`;
 }
@@ -584,41 +714,33 @@ function findOverlappingSegments(pat) {
 }
 
 // ─── PATTERN GENERATION ───
-// Pattern = sequence of nodes. Each consecutive pair = one "line".
-// Lines can connect ANY two different nodes (not just adjacent).
-// Level N has N+1 lines (= N+2 nodes in the sequence).
-// Mix of short and long lines, with increasing long-line probability.
 function generatePattern(numLines) {
   const numNodes = numLines + 1;
   const pat = [];
-  const first = Math.floor(Math.random() * NODES);
+  const first = Math.floor(Math.random() * nodes);
   pat.push(first);
   const used = new Set([first]);
 
   while (pat.length < numNodes) {
     const last = pat[pat.length - 1];
-    const lp = NODE_POSITIONS[last];
+    const lp = nodePositions[last];
 
-    // Gather all candidates (anything except current node)
     const unused = [];
     const usedNodes = [];
-    for (let i = 0; i < NODES; i++) {
+    for (let i = 0; i < nodes; i++) {
       if (i === last) continue;
       if (!used.has(i)) unused.push(i);
       else usedNodes.push(i);
     }
 
-    // Pick from unused first, then used (for patterns > 9 nodes)
     let pool = unused.length > 0 ? unused : usedNodes;
     if (pool.length === 0) break;
 
-    // Bias: higher levels have more chance of picking far nodes
-    // "Far" = not adjacent (row or col distance > 1)
     const farChance = Math.min(0.7, 0.2 + (level - 1) * 0.06);
     const adjacent = [];
     const far = [];
     for (const i of pool) {
-      const p = NODE_POSITIONS[i];
+      const p = nodePositions[i];
       const isAdj = Math.abs(p.row - lp.row) <= 1 && Math.abs(p.col - lp.col) <= 1;
       if (isAdj) adjacent.push(i);
       else far.push(i);
@@ -637,6 +759,33 @@ function generatePattern(numLines) {
     used.add(chosen);
   }
   return pat;
+}
+
+// ─── GRID EXPANSION CHECK ───
+function checkGridExpansion() {
+  if (gridSize >= MAX_GRID_SIZE) return false;
+  const uniqueNodes = new Set(pattern);
+  if (uniqueNodes.size >= nodes) {
+    recalcGrid(gridSize + 1);
+    createGrid();
+    updateGridHud();
+    showGridExpandNotification();
+    if (!sfxMuted) audio.gridExpand();
+    haptic([50, 30, 50, 30, 80]);
+    return true;
+  }
+  return false;
+}
+
+function showGridExpandNotification() {
+  const notify = document.getElementById('grid-expand-notify');
+  document.getElementById('grid-expand-text').textContent = `GRID EXPANDED: ${gridSize}x${gridSize}`;
+  notify.classList.add('active');
+  setTimeout(() => notify.classList.remove('active'), 2000);
+}
+
+function updateGridHud() {
+  document.getElementById('hud-grid').textContent = `${gridSize}x${gridSize}`;
 }
 
 // ─── GLITCH TEXT ───
@@ -670,13 +819,17 @@ const statusText = $('status-text');
 const progressDots = $('progress-dots');
 const btnRetry = $('btn-retry');
 const btnRepeat = $('btn-repeat');
+const btnDecrypt = $('btn-decrypt');
+const btnPause = $('btn-pause');
 const scoreOverlay = $('score-overlay');
 const scorePanel = $('score-panel');
+const comboFlash = $('combo-flash');
+const pauseOverlay = $('pause-overlay');
 
 // ─── NODE HELPERS ───
 function getNodeCenter(idx) {
-  const p = NODE_POSITIONS[idx];
-  const spacing = 100 / (GRID_SIZE + 1);
+  const p = nodePositions[idx];
+  const spacing = 100 / (gridSize + 1);
   return { x: spacing * (p.col + 1), y: spacing * (p.row + 1) };
 }
 
@@ -685,15 +838,22 @@ let nodeEls = [];
 function createGrid() {
   nodeEls.forEach(n => n.remove());
   nodeEls = [];
-  for (let idx = 0; idx < NODES; idx++) {
-    const pos = NODE_POSITIONS[idx];
-    const spacing = 100 / (GRID_SIZE + 1);
+  const nodeSizePct = Math.max(7, 54 / gridSize);
+  const maxPx = Math.round(180 / gridSize);
+
+  for (let idx = 0; idx < nodes; idx++) {
+    const pos = nodePositions[idx];
+    const spacing = 100 / (gridSize + 1);
     const cx = spacing * (pos.col + 1);
     const cy = spacing * (pos.row + 1);
     const node = document.createElement('div');
     node.className = 'node';
     node.style.left = cx + '%';
     node.style.top = cy + '%';
+    node.style.width = nodeSizePct + '%';
+    node.style.height = nodeSizePct + '%';
+    node.style.maxWidth = maxPx + 'px';
+    node.style.maxHeight = maxPx + 'px';
     node.style.transform = 'translate(-50%, -50%) scale(1)';
     node.style.background = 'radial-gradient(circle at 40% 35%, #1a3a2a, #0a1a10)';
     node.style.border = '2.5px solid #00ff8855';
@@ -706,9 +866,6 @@ function createGrid() {
     node.appendChild(inner);
     gridContainer.appendChild(node);
     nodeEls.push(node);
-
-    // No click handler needed — mousedown/touchstart via drag handler handles all input.
-    // Using click would cause double-fire since mousedown already processes the node.
   }
 }
 
@@ -724,37 +881,30 @@ function updateNode(idx, { color = '#1a3a2a', border = '#00ff8855', scale = 1, g
 }
 
 function resetAllNodes() {
-  for (let i = 0; i < NODES; i++) updateNode(i);
+  for (let i = 0; i < nodes; i++) updateNode(i);
 }
 
-// Render lines in two passes:
-// 1) All segments in baseColor
-// 2) Segments that are overlaps get a second line on top in overlapColor, offset + dashed
 function renderLines(segments, baseColor, overlapColor, overlaps, width = 3, opacity = 1) {
   let html = '';
   const drawn = {};
 
-  // Pass 1: draw all lines in base color
   segments.forEach(([from, to]) => {
     const a = getNodeCenter(from);
     const b = getNodeCenter(to);
     html += `<line x1="${a.x}%" y1="${a.y}%" x2="${b.x}%" y2="${b.y}%"
       stroke="${baseColor}" stroke-width="${width}" stroke-linecap="round" opacity="${opacity}"
       style="filter:drop-shadow(0 0 4px ${baseColor})"/>`;
-
     const key = segmentKey(from, to);
     drawn[key] = (drawn[key] || 0) + 1;
   });
 
-  // Pass 2: for each segment drawn more than once, overlay in overlap color with offset
   const overlapDrawn = {};
   segments.forEach(([from, to]) => {
     const key = segmentKey(from, to);
     if (!overlaps.has(key)) return;
     const count = overlapDrawn[key] || 0;
     overlapDrawn[key] = count + 1;
-    if (count === 0) return; // first occurrence stays base color
-
+    if (count === 0) return;
     const a = getNodeCenter(from);
     const b = getNodeCenter(to);
     const dx = b.x - a.x;
@@ -763,7 +913,6 @@ function renderLines(segments, baseColor, overlapColor, overlaps, width = 3, opa
     const offset = 2.5 * count;
     const ox = (-dy / len) * offset;
     const oy = (dx / len) * offset;
-
     html += `<line x1="${a.x + ox}%" y1="${a.y + oy}%" x2="${b.x + ox}%" y2="${b.y + oy}%"
       stroke="${overlapColor}" stroke-width="${width + 1}" stroke-linecap="round" opacity="${opacity}"
       stroke-dasharray="6 4"
@@ -773,29 +922,46 @@ function renderLines(segments, baseColor, overlapColor, overlaps, width = 3, opa
   return html;
 }
 
+function renderDragTrail() {
+  if (!dragTrailActive || state !== 'input' || userPattern.length === 0) return '';
+  const lastNode = userPattern[userPattern.length - 1];
+  const a = getNodeCenter(lastNode);
+  return `<line x1="${a.x}%" y1="${a.y}%" x2="${dragTrailX}%" y2="${dragTrailY}%"
+    stroke="#00ff8844" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4"
+    style="filter:drop-shadow(0 0 3px #00ff8833)"/>`;
+}
+
 function renderSvg() {
   let svg = '';
   if (state === 'showing') {
     const overlaps = findOverlappingSegments(pattern);
     svg += renderLines(shownLineSegments, '#00ddff', OVERLAP_COLOR_SHOW, overlaps, 3, 0.9);
   } else if (state === 'input' || state === 'success') {
-    // Use full pattern's overlaps so user sees which segments are overlapping
     const overlaps = findOverlappingSegments(pattern);
     svg += renderLines(userLineSegments, '#00ff88', OVERLAP_COLOR_USER, overlaps, 3, 0.9);
-  } else if (state === 'fail' || state === 'gameover') {
+    svg += renderDragTrail();
+  } else if (state === 'fail' || state === 'gameover' || state === 'ghost') {
     const correctSegs = [];
     for (let i = 1; i < pattern.length; i++) correctSegs.push([pattern[i-1], pattern[i]]);
     const overlaps = findOverlappingSegments(pattern);
     svg += renderLines(correctSegs, '#ff3355', '#cc2266', overlaps, 2, 0.3);
     svg += renderLines(userLineSegments, '#ff3355', '#cc2266', overlaps, 3, 0.6);
+    // Ghost lines
+    if (state === 'ghost' && ghostLineSegments.length > 0) {
+      svg += renderLines(ghostLineSegments, '#00ddff', '#00ddff', new Set(), 3, 0.7);
+    }
   }
   gridSvg.innerHTML = svg;
 }
 
+// Ghost replay state
+let ghostLineSegments = [];
+
 function updateLives() {
   let html = '';
-  for (let i = 0; i < MAX_LIVES; i++) {
-    html += `<span class="life ${i >= lives ? 'lost' : ''}">💚</span>`;
+  const maxDisplay = Math.max(MAX_LIVES, lives);
+  for (let i = 0; i < maxDisplay; i++) {
+    html += `<span class="life ${i >= lives ? 'lost' : ''}">&#x1F49A;</span>`;
   }
   livesDisplay.innerHTML = html;
 }
@@ -804,6 +970,7 @@ function updateHud() {
   hudLevel.textContent = level;
   hudScore.textContent = score.toLocaleString();
   hudBest.textContent = highScore.toLocaleString();
+  updateGridHud();
   const colors = { showing: '#00ddff', success: '#00ff88', fail: '#ff3355', gameover: '#ff3355' };
   hudLevel.style.color = colors[state] || '#00ff88';
 }
@@ -834,9 +1001,13 @@ function updateProgressDots() {
 }
 
 function updateCombo() {
+  comboBadge.classList.remove('milestone-3', 'milestone-5', 'milestone-10');
   if (combo > 1 && state !== 'fail' && state !== 'gameover') {
     comboBadge.classList.remove('invisible');
     comboBadge.textContent = `x${combo} COMBO`;
+    if (combo >= 10) comboBadge.classList.add('milestone-10');
+    else if (combo >= 5) comboBadge.classList.add('milestone-5');
+    else if (combo >= 3) comboBadge.classList.add('milestone-3');
   } else {
     comboBadge.classList.add('invisible');
   }
@@ -849,6 +1020,34 @@ function updateBonusInfo() {
   } else {
     bonusInfo.classList.add('invisible');
   }
+}
+
+function updateDecryptButton() {
+  if (decryptCharges > 0 && state === 'input' && userPattern.length === 0 && !decryptUsedThisLevel) {
+    btnDecrypt.classList.remove('invisible');
+    btnDecrypt.disabled = false;
+    btnDecrypt.textContent = `DECRYPT (${decryptCharges})`;
+  } else {
+    btnDecrypt.classList.add('invisible');
+  }
+}
+
+// ─── COMBO FLASH ───
+function triggerComboFlash(tier) {
+  comboFlash.className = 'combo-flash';
+  let cls = 'green';
+  if (tier >= 10) cls = 'pink';
+  else if (tier >= 5) cls = 'gold';
+  else if (tier >= 3) cls = 'cyan';
+  comboFlash.classList.add(cls, 'active');
+  comboBadge.style.animation = 'comboPopIn 0.4s ease-out';
+  setTimeout(() => { comboBadge.style.animation = ''; }, 400);
+  if (!sfxMuted) audio.comboMilestone(tier);
+  haptic([30, 20, 30, 20, 50]);
+  setTimeout(() => {
+    comboFlash.classList.remove('active');
+    setTimeout(() => { comboFlash.className = 'combo-flash'; }, 400);
+  }, 500);
 }
 
 // ─── TIMER ───
@@ -864,6 +1063,7 @@ function startTimer() {
   timerDisplay.classList.remove('invisible', 'warning', 'danger');
   updateTimerDisplay();
   timerInterval = setInterval(() => {
+    if (paused) return;
     timeRemaining = Math.max(0, timeRemaining - 0.1);
     updateTimerDisplay();
     if (timeRemaining <= 0) {
@@ -878,19 +1078,15 @@ function stopTimer() {
 }
 
 function updateTimerDisplay() {
-  timerDisplay.textContent = `⏱ ${timeRemaining.toFixed(1)}s`;
+  timerDisplay.textContent = `${timeRemaining.toFixed(1)}s`;
   timerDisplay.classList.remove('warning', 'danger');
   const ratio = timeRemaining / timeLimitForLevel;
   if (ratio < 0.25) timerDisplay.classList.add('danger');
   else if (ratio < 0.5) timerDisplay.classList.add('warning');
 }
 
-// Time bonus = additive points based on seconds remaining.
-// Faster = more points. Scales with level.
 function calculateTimeBonusPoints() {
   const secsLeft = timeRemaining;
-  const ratio = secsLeft / timeLimitForLevel;
-  // Points per second remaining, scaling with level
   const perSec = 5 + level * 3;
   const raw = Math.floor(secsLeft * perSec);
   return Math.max(0, raw);
@@ -904,8 +1100,24 @@ function getTimeBonusLabel(secsLeft, timeLimit) {
   return 'STANDARD';
 }
 
+// ─── PAUSE / RESUME ───
+function doPause() {
+  if (state !== 'input' || paused) return;
+  paused = true;
+  pausedTimeRemaining = timeRemaining;
+  pauseOverlay.classList.add('active');
+  btnPause.disabled = true; btnPause.style.opacity = '0.3';
+}
+
+function doResume() {
+  if (!paused) return;
+  paused = false;
+  pauseOverlay.classList.remove('active');
+  btnPause.disabled = false; btnPause.style.opacity = '1';
+}
+
 // ─── SCORE MODAL ───
-function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, timeBonusPoints, timeBonusLabel, totalScore, timeUsed, timeLimit, newRecord, onContinue }) {
+function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, timeBonusPoints, timeBonusLabel, totalScore, timeUsed, timeLimit, newRecord, gridExpanded, earnedExtraLife, onContinue }) {
   let delay = 0;
   const d = (ms) => { delay += ms; return `animation-delay:${delay}ms;`; };
 
@@ -940,6 +1152,27 @@ function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, time
     <span class="score-row-value ${tbColor}">+${timeBonusPoints.toLocaleString()}</span>
   </div>`;
 
+  if (gridExpanded) {
+    html += `<div class="score-row" style="${d(100)}">
+      <span class="score-row-label">GRID UPGRADE</span>
+      <span class="score-row-value cyan">${gridSize}x${gridSize}</span>
+    </div>`;
+  }
+
+  if (earnedExtraLife) {
+    html += `<div class="score-row" style="${d(100)}">
+      <span class="score-row-label">BONUS LIFE</span>
+      <span class="score-row-value green">+1 &#x1F49A;</span>
+    </div>`;
+  }
+
+  if (decryptCharges > 0) {
+    html += `<div class="score-row" style="${d(80)}">
+      <span class="score-row-label">DECRYPT CHARGES</span>
+      <span class="score-row-value yellow">${decryptCharges}</span>
+    </div>`;
+  }
+
   html += `<div class="score-divider" style="${d(80)}"></div>`;
 
   html += `<div class="score-total-row" style="${d(100)}">
@@ -948,10 +1181,10 @@ function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, time
   </div>`;
 
   if (newRecord) {
-    html += `<div class="score-record" style="${d(100)}">★ NEW HIGH SCORE ★</div>`;
+    html += `<div class="score-record" style="${d(100)}">&#x2605; NEW HIGH SCORE &#x2605;</div>`;
   }
 
-  html += `<button class="score-btn" id="score-continue-btn" style="${d(150)}">CONTINUE ▶</button>`;
+  html += `<button class="score-btn" id="score-continue-btn" style="${d(150)}">CONTINUE &#x25B6;</button>`;
 
   scorePanel.innerHTML = html;
   scoreOverlay.classList.add('active');
@@ -975,16 +1208,23 @@ function showPatternSequence(pat, onComplete) {
   activeNode = -1;
   userPattern = [];
   userLineSegments = [];
+  ghostLineSegments = [];
   failNode = -1;
+  dragTrailActive = false;
   resetAllNodes();
   renderSvg();
   updateHud();
   updateProgressDots();
   updateCombo();
   updateBonusInfo();
+  updateDecryptButton();
   btnRepeat.classList.add('invisible');
   btnRetry.classList.add('invisible');
   timerDisplay.classList.add('invisible');
+
+  // Clean up any lingering new-record elements
+  const oldRecs = statusText.parentElement.querySelectorAll('.new-record');
+  oldRecs.forEach(el => el.remove());
 
   statusText.innerHTML = '';
   glitchText(statusText, 'DECRYPTING...');
@@ -1034,14 +1274,55 @@ function enterInputState() {
   updateProgressDots();
   updateCombo();
   updateBonusInfo();
+  updateDecryptButton();
   startTimer();
+  btnPause.disabled = false; btnPause.style.opacity = '1';
   if (!repeatUsed) {
     btnRepeat.classList.remove('invisible');
     btnRepeat.disabled = false;
   } else {
     btnRepeat.classList.add('invisible');
   }
-  for (let i = 0; i < NODES; i++) nodeEls[i].style.cursor = 'pointer';
+  for (let i = 0; i < nodes; i++) nodeEls[i].style.cursor = 'pointer';
+}
+
+// ─── DECRYPT POWER-UP ───
+function handleDecrypt() {
+  if (state !== 'input' || decryptCharges <= 0 || userPattern.length > 0 || decryptUsedThisLevel) return;
+  decryptCharges--;
+  decryptUsedThisLevel = true;
+  if (!sfxMuted) audio.decrypt();
+  haptic(30);
+
+  const hintCount = Math.min(DECRYPT_HINT_NODES, pattern.length);
+  let hintIdx = 0;
+
+  function applyNextHint() {
+    if (hintIdx >= hintCount) {
+      updateDecryptButton();
+      return;
+    }
+    const nodeIdx = pattern[hintIdx];
+    userPattern.push(nodeIdx);
+    if (hintIdx > 0) {
+      userLineSegments.push([pattern[hintIdx - 1], nodeIdx]);
+    }
+    updateNode(nodeIdx, {
+      color: '#ffcc00', border: '#ffcc00', scale: 1.15,
+      glow: '0 0 12px #ffcc00', innerColor: '#ffcc00'
+    });
+    activeNode = nodeIdx;
+    renderSvg();
+    const linesDrawn = Math.max(0, userPattern.length - 1);
+    const totalLines = pattern.length - 1;
+    statusText.textContent = `REPEAT PATTERN (${linesDrawn}/${totalLines} LINES)`;
+    updateProgressDots();
+    hintIdx++;
+    setTimeout(applyNextHint, 200);
+  }
+
+  applyNextHint();
+  btnDecrypt.classList.add('invisible');
 }
 
 // ─── START ───
@@ -1055,15 +1336,21 @@ function startGame() {
   combo = 0;
   lives = MAX_LIVES;
   isNewRecord = false;
+  perfectClears = 0;
+  decryptCharges = 0;
+  decryptUsedThisLevel = false;
+  recalcGrid(3);
+  createGrid();
   updateLives();
   startLevel(1);
   playMusic();
 }
 
 function startLevel(lvl) {
+  clearTimeout(showTimer);
   level = lvl;
   repeatUsed = false;
-  // lvl + 1 lines = lvl + 2 nodes in the sequence
+  decryptUsedThisLevel = false;
   const pat = generatePattern(lvl + 1);
   pattern = pat;
   updateHud();
@@ -1072,16 +1359,18 @@ function startLevel(lvl) {
 
 // ─── INPUT HANDLING ───
 function handleNodeClick(idx) {
-  if (state !== 'input') return;
+  if (state !== 'input' || paused) return;
   const nextIndex = userPattern.length;
 
   if (pattern[nextIndex] !== idx) {
     if (!sfxMuted) audio.nodeInput(idx);
+    haptic([50, 30, 100]);
     handleFail(idx);
     return;
   }
 
   if (!sfxMuted) audio.nodeInput(idx);
+  haptic(30);
   userPattern.push(idx);
 
   if (nextIndex > 0) {
@@ -1098,11 +1387,14 @@ function handleNodeClick(idx) {
   const totalLines = pattern.length - 1;
   statusText.textContent = `REPEAT PATTERN (${linesDrawn}/${totalLines} LINES)`;
   updateProgressDots();
+  updateDecryptButton();
 
   if (userPattern.length === pattern.length) {
     // SUCCESS
     stopTimer();
+    dragTrailActive = false;
     state = 'success';
+    btnPause.disabled = true; btnPause.style.opacity = '0.3';
     const newCombo = combo + 1;
     combo = newCombo;
 
@@ -1111,10 +1403,28 @@ function handleNodeClick(idx) {
     const timeBonusLabel = getTimeBonusLabel(timeRemaining, timeLimitForLevel);
     const baseScore = level * 100;
     const comboMultiplier = newCombo;
-    // Base * combo + time bonus (additive)
     const comboScore = Math.round(baseScore * comboMultiplier);
     const levelScore = comboScore + timeBonusPoints;
     score += levelScore;
+
+    // Track perfect clears for decrypt charges
+    if (!repeatUsed && !decryptUsedThisLevel) {
+      perfectClears++;
+      if (perfectClears >= DECRYPT_EVERY_N_PERFECT) {
+        perfectClears = 0;
+        decryptCharges++;
+      }
+    } else {
+      perfectClears = 0;
+    }
+
+    // Extra life every 3 levels
+    let earnedExtraLife = false;
+    if (level % 3 === 0 && lives < MAX_LIVES + 3) {
+      lives++;
+      earnedExtraLife = true;
+      updateLives();
+    }
 
     const uniqueNodes = [...new Set(pattern)];
     uniqueNodes.forEach(n => updateNode(n, {
@@ -1123,6 +1433,11 @@ function handleNodeClick(idx) {
     }));
 
     if (!sfxMuted) audio.success();
+
+    // Combo milestone flash
+    if (newCombo >= 10 && newCombo % 5 === 0) triggerComboFlash(10);
+    else if (newCombo === 5) triggerComboFlash(5);
+    else if (newCombo === 3) triggerComboFlash(3);
 
     glitchText(statusText, 'ACCESS GRANTED');
     statusText.style.color = '#00ff88';
@@ -1141,9 +1456,12 @@ function handleNodeClick(idx) {
     updateHud();
     updateCombo();
     btnRepeat.classList.add('invisible');
+    btnDecrypt.classList.add('invisible');
     timerDisplay.classList.add('invisible');
 
-    // Show score modal after a short delay
+    // Check grid expansion
+    const gridExpanded = checkGridExpansion();
+
     setTimeout(() => {
       showScoreModal({
         levelNum: level,
@@ -1156,6 +1474,8 @@ function handleNodeClick(idx) {
         timeUsed,
         timeLimit: timeLimitForLevel,
         newRecord: isNewRec,
+        gridExpanded,
+        earnedExtraLife,
         onContinue: () => {
           startLevel(level + 1);
         }
@@ -1164,10 +1484,55 @@ function handleNodeClick(idx) {
   }
 }
 
+// ─── GHOST REPLAY ───
+function showGhostReplay(fromIndex, onComplete) {
+  state = 'ghost';
+  ghostLineSegments = [];
+  renderSvg();
+
+  const ghostDelay = 300;
+  let i = fromIndex;
+
+  function step() {
+    if (i >= pattern.length) {
+      showTimer = setTimeout(() => {
+        ghostLineSegments = [];
+        if (onComplete) onComplete();
+      }, 800);
+      return;
+    }
+
+    const nodeIdx = pattern[i];
+    updateNode(nodeIdx, {
+      color: '#00ddff55', border: '#00ddff88', scale: 1.1,
+      glow: '0 0 10px #00ddff44', innerColor: '#00ddff66'
+    });
+    if (!sfxMuted) audio.nodeShow(nodeIdx);
+
+    if (i > fromIndex) {
+      ghostLineSegments.push([pattern[i - 1], nodeIdx]);
+    } else if (i === fromIndex && fromIndex > 0) {
+      // Mark the starting node more visibly
+      updateNode(nodeIdx, {
+        color: '#00ddff77', border: '#00ddffaa', scale: 1.2,
+        glow: '0 0 14px #00ddff66', innerColor: '#00ddff88'
+      });
+    }
+
+    renderSvg();
+    i++;
+    showTimer = setTimeout(step, ghostDelay);
+  }
+
+  showTimer = setTimeout(step, 400);
+}
+
 function handleFail(idx) {
   stopTimer();
+  dragTrailActive = false;
   lives--;
   updateLives();
+  btnPause.disabled = true; btnPause.style.opacity = '0.3';
 
   if (idx >= 0) {
     failNode = idx;
@@ -1185,9 +1550,11 @@ function handleFail(idx) {
   });
 
   combo = 0;
+  perfectClears = 0;
   updateCombo();
   renderSvg();
   btnRepeat.classList.add('invisible');
+  btnDecrypt.classList.add('invisible');
   timerDisplay.classList.add('invisible');
   bonusInfo.classList.add('invisible');
 
@@ -1197,6 +1564,7 @@ function handleFail(idx) {
   if (lives <= 0) {
     state = 'gameover';
     if (!sfxMuted) audio.fail();
+    haptic([100, 50, 150]);
 
     statusText.innerHTML = '';
     glitchText(statusText, 'SYSTEM BREACH FAILED');
@@ -1213,7 +1581,7 @@ function handleFail(idx) {
         const rec = document.createElement('div');
         rec.className = 'new-record';
         rec.style.color = '#ffcc00';
-        rec.textContent = `★ NEW RECORD: ${highScore.toLocaleString()} ★`;
+        rec.textContent = `\u2605 NEW RECORD: ${highScore.toLocaleString()} \u2605`;
         statusText.parentElement.appendChild(rec);
       }
     }, 300);
@@ -1224,29 +1592,48 @@ function handleFail(idx) {
   } else {
     state = 'fail';
     if (!sfxMuted) audio.lifeLost();
+    haptic([50, 30, 100]);
 
     statusText.innerHTML = '';
-    glitchText(statusText, `ACCESS DENIED — ${lives} ${lives === 1 ? 'LIFE' : 'LIVES'} LEFT`);
+    glitchText(statusText, `ACCESS DENIED \u2014 ${lives} ${lives === 1 ? 'LIFE' : 'LIVES'} LEFT`);
     statusText.style.color = '#ff3355';
 
     updateHud();
 
-    showTimer = setTimeout(() => {
-      resetAllNodes();
-      renderSvg();
-      repeatUsed = false;
-      showPatternSequence(pattern, enterInputState);
-    }, 2000);
+    // Ghost replay: show what was missing from last correct node
+    const lastCorrectIdx = userPattern.length;
+    if (lastCorrectIdx > 0 && lastCorrectIdx < pattern.length) {
+      // Start ghost from the last node the user got right
+      showTimer = setTimeout(() => {
+        showGhostReplay(lastCorrectIdx - 1, () => {
+          resetAllNodes();
+          renderSvg();
+          repeatUsed = false;
+          showPatternSequence(pattern, enterInputState);
+        });
+      }, 1500);
+    } else {
+      // User got 0 nodes or somehow completed - just re-show
+      showTimer = setTimeout(() => {
+        resetAllNodes();
+        renderSvg();
+        repeatUsed = false;
+        showPatternSequence(pattern, enterInputState);
+      }, 2000);
+    }
   }
 }
 
 // ─── REPEAT PATTERN ───
 function handleRepeat() {
-  if (state !== 'input' || repeatUsed) return;
+  if (state !== 'input' || repeatUsed || paused) return;
   repeatUsed = true;
   stopTimer();
   btnRepeat.classList.add('invisible');
+  btnDecrypt.classList.add('invisible');
   timerDisplay.classList.add('invisible');
+  btnPause.disabled = true; btnPause.style.opacity = '0.3';
+  dragTrailActive = false;
 
   userPattern = [];
   userLineSegments = [];
@@ -1261,10 +1648,10 @@ let lastDragNode = -1;
 
 function getNodeFromPoint(clientX, clientY) {
   const rect = gridContainer.getBoundingClientRect();
-  const spacing = rect.width / (GRID_SIZE + 1);
-  const tolerance = spacing * 0.25;
-  for (let i = 0; i < NODES; i++) {
-    const p = NODE_POSITIONS[i];
+  const spacing = rect.width / (gridSize + 1);
+  const tolerance = spacing * (gridSize <= 4 ? 0.28 : 0.32);
+  for (let i = 0; i < nodes; i++) {
+    const p = nodePositions[i];
     const cx = rect.left + spacing * (p.col + 1);
     const cy = rect.top + spacing * (p.row + 1);
     const dist = Math.sqrt((clientX - cx) ** 2 + (clientY - cy) ** 2);
@@ -1273,26 +1660,27 @@ function getNodeFromPoint(clientX, clientY) {
   return -1;
 }
 
-// Returns set of node indices that lie on the straight line between nodes a and b
-// on the grid (excluding a and b themselves).
-// E.g. on 3x3: between 0(0,0) and 8(2,2) → node 4(1,1) is in between.
+function clientToSvgPercent(clientX, clientY) {
+  const rect = gridContainer.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) / rect.width * 100,
+    y: (clientY - rect.top) / rect.height * 100
+  };
+}
+
 function getNodesOnLineBetween(a, b) {
   const result = new Set();
   if (a === b) return result;
-  const pa = NODE_POSITIONS[a];
-  const pb = NODE_POSITIONS[b];
+  const pa = nodePositions[a];
+  const pb = nodePositions[b];
   const dr = pb.row - pa.row;
   const dc = pb.col - pa.col;
-  // Check each node to see if it's collinear and between a and b
-  for (let i = 0; i < NODES; i++) {
+  for (let i = 0; i < nodes; i++) {
     if (i === a || i === b) continue;
-    const pi = NODE_POSITIONS[i];
+    const pi = nodePositions[i];
     const dr_i = pi.row - pa.row;
     const dc_i = pi.col - pa.col;
-    // Cross product = 0 means collinear
     if (dr * dc_i - dc * dr_i !== 0) continue;
-    // Check that i is between a and b (dot product test: 0 < t < 1)
-    // t = dot(ai, ab) / dot(ab, ab)
     const dot_ab = dr * dr + dc * dc;
     const dot_ai = dr_i * dr + dc_i * dc;
     if (dot_ai > 0 && dot_ai < dot_ab) {
@@ -1302,46 +1690,48 @@ function getNodesOnLineBetween(a, b) {
   return result;
 }
 
-// Pre-compute pass-through nodes for the current drag.
-// When the user has confirmed the last node and the next expected node is known,
-// we compute which dots lie on the line between them — those can be skipped.
-// Any other dot the finger touches = fail.
 function handleDragNode(node) {
-  if (node < 0 || node === lastDragNode || state !== 'input') return;
+  if (node < 0 || node === lastDragNode || state !== 'input' || paused) return;
   lastDragNode = node;
   const nextIndex = userPattern.length;
   if (nextIndex >= pattern.length) return;
 
   const expectedNode = pattern[nextIndex];
 
-  // If this is the correct next node, register it
   if (node === expectedNode) {
     handleNodeClick(node);
     return;
   }
 
-  // Check if this node is on the direct line path from the last confirmed node
-  // to the expected next node — if so, it's a pass-through and can be ignored
   if (nextIndex > 0) {
     const lastConfirmed = pattern[nextIndex - 1];
     const passThrough = getNodesOnLineBetween(lastConfirmed, expectedNode);
     if (passThrough.has(node)) {
-      return; // finger passing through — ignore
+      return;
     }
   }
 
-  // For the very first node (nextIndex === 0), there's no line to pass through,
-  // so any wrong node during drag is a fail
-  // For subsequent nodes, touching a non-pass-through wrong node = fail
-  handleNodeClick(node); // will trigger fail since node !== expectedNode
+  handleNodeClick(node);
 }
 
-// Handle releasing the finger/mouse — fail if pattern isn't complete yet
+function updateDragTrail(clientX, clientY) {
+  if (state !== 'input' || !isDragging || userPattern.length === 0) {
+    dragTrailActive = false;
+    return;
+  }
+  const pos = clientToSvgPercent(clientX, clientY);
+  dragTrailX = pos.x;
+  dragTrailY = pos.y;
+  dragTrailActive = true;
+  renderSvg();
+}
+
 function handleRelease() {
   if (!isDragging) return;
   isDragging = false;
   lastDragNode = -1;
-  // If the user released before completing the pattern, that's a fail
+  dragTrailActive = false;
+  renderSvg();
   if (state === 'input' && userPattern.length > 0 && userPattern.length < pattern.length) {
     handleFail(-1);
   }
@@ -1349,16 +1739,18 @@ function handleRelease() {
 
 // --- Mouse ---
 gridContainer.addEventListener('mousedown', (e) => {
-  if (state !== 'input') return;
+  if (state !== 'input' || paused) return;
   isDragging = true;
   lastDragNode = -1;
   const node = getNodeFromPoint(e.clientX, e.clientY);
   if (node >= 0) handleDragNode(node);
+  updateDragTrail(e.clientX, e.clientY);
 });
 gridContainer.addEventListener('mousemove', (e) => {
-  if (!isDragging || state !== 'input') return;
+  if (!isDragging || state !== 'input' || paused) return;
   const node = getNodeFromPoint(e.clientX, e.clientY);
   if (node >= 0) handleDragNode(node);
+  updateDragTrail(e.clientX, e.clientY);
 });
 gridContainer.addEventListener('mouseup', handleRelease);
 gridContainer.addEventListener('mouseleave', handleRelease);
@@ -1366,19 +1758,21 @@ gridContainer.addEventListener('mouseleave', handleRelease);
 // --- Touch ---
 gridContainer.addEventListener('touchstart', (e) => {
   e.preventDefault();
-  if (state !== 'input') return;
+  if (state !== 'input' || paused) return;
   isDragging = true;
   lastDragNode = -1;
   const t = e.touches[0];
   const node = getNodeFromPoint(t.clientX, t.clientY);
   if (node >= 0) handleDragNode(node);
+  updateDragTrail(t.clientX, t.clientY);
 }, { passive: false });
 gridContainer.addEventListener('touchmove', (e) => {
   e.preventDefault();
-  if (!isDragging || state !== 'input') return;
+  if (!isDragging || state !== 'input' || paused) return;
   const t = e.touches[0];
   const node = getNodeFromPoint(t.clientX, t.clientY);
   if (node >= 0) handleDragNode(node);
+  updateDragTrail(t.clientX, t.clientY);
 }, { passive: false });
 gridContainer.addEventListener('touchend', (e) => {
   e.preventDefault();
@@ -1388,9 +1782,17 @@ gridContainer.addEventListener('touchend', (e) => {
 // ─── BUTTON HANDLERS ───
 $('btn-start').addEventListener('click', startGame);
 btnRetry.addEventListener('click', () => {
+  clearTimeout(showTimer);
   if (!sfxMuted) audio.click();
   stopMusic();
   score = 0; combo = 0; lives = MAX_LIVES; isNewRecord = false;
+  perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false;
+  paused = false;
+  pauseOverlay.classList.remove('active');
+  // Clean up new-record elements
+  statusText.parentElement.querySelectorAll('.new-record').forEach(el => el.remove());
+  recalcGrid(3);
+  createGrid();
   btnRetry.classList.add('invisible');
   hideScoreModal();
   startLevel(1);
@@ -1398,6 +1800,9 @@ btnRetry.addEventListener('click', () => {
   playMusic();
 });
 btnRepeat.addEventListener('click', handleRepeat);
+btnDecrypt.addEventListener('click', handleDecrypt);
+btnPause.addEventListener('click', doPause);
+$('btn-resume').addEventListener('click', doResume);
 $('btn-mute-sfx').addEventListener('click', () => { audio.init(); toggleSfx(); });
 $('btn-mute-music').addEventListener('click', () => { toggleMusic(); });
 $('btn-mute-sfx-splash').addEventListener('click', () => { audio.init(); toggleSfx(); });
