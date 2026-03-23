@@ -707,9 +707,8 @@ function createGrid() {
     gridContainer.appendChild(node);
     nodeEls.push(node);
 
-    node.addEventListener('click', () => {
-      if (state === 'input') handleNodeClick(idx);
-    });
+    // No click handler needed — mousedown/touchstart via drag handler handles all input.
+    // Using click would cause double-fire since mousedown already processes the node.
   }
 }
 
@@ -1258,7 +1257,7 @@ function handleRepeat() {
 }
 
 // ─── TOUCH / DRAG ───
-let lastDragNode = -1; // tracks last node finger/mouse passed through
+let lastDragNode = -1;
 
 function getNodeFromPoint(clientX, clientY) {
   const rect = gridContainer.getBoundingClientRect();
@@ -1274,19 +1273,81 @@ function getNodeFromPoint(clientX, clientY) {
   return -1;
 }
 
-// During drag, only register the correct next node — skip wrong ones silently.
-// This is needed because when drawing a line from e.g. node 0 to node 8,
-// the finger physically passes through node 4 in between.
+// Returns set of node indices that lie on the straight line between nodes a and b
+// on the grid (excluding a and b themselves).
+// E.g. on 3x3: between 0(0,0) and 8(2,2) → node 4(1,1) is in between.
+function getNodesOnLineBetween(a, b) {
+  const result = new Set();
+  if (a === b) return result;
+  const pa = NODE_POSITIONS[a];
+  const pb = NODE_POSITIONS[b];
+  const dr = pb.row - pa.row;
+  const dc = pb.col - pa.col;
+  // Check each node to see if it's collinear and between a and b
+  for (let i = 0; i < NODES; i++) {
+    if (i === a || i === b) continue;
+    const pi = NODE_POSITIONS[i];
+    const dr_i = pi.row - pa.row;
+    const dc_i = pi.col - pa.col;
+    // Cross product = 0 means collinear
+    if (dr * dc_i - dc * dr_i !== 0) continue;
+    // Check that i is between a and b (dot product test: 0 < t < 1)
+    // t = dot(ai, ab) / dot(ab, ab)
+    const dot_ab = dr * dr + dc * dc;
+    const dot_ai = dr_i * dr + dc_i * dc;
+    if (dot_ai > 0 && dot_ai < dot_ab) {
+      result.add(i);
+    }
+  }
+  return result;
+}
+
+// Pre-compute pass-through nodes for the current drag.
+// When the user has confirmed the last node and the next expected node is known,
+// we compute which dots lie on the line between them — those can be skipped.
+// Any other dot the finger touches = fail.
 function handleDragNode(node) {
   if (node < 0 || node === lastDragNode || state !== 'input') return;
   lastDragNode = node;
   const nextIndex = userPattern.length;
-  if (nextIndex < pattern.length && pattern[nextIndex] === node) {
+  if (nextIndex >= pattern.length) return;
+
+  const expectedNode = pattern[nextIndex];
+
+  // If this is the correct next node, register it
+  if (node === expectedNode) {
     handleNodeClick(node);
+    return;
   }
-  // Wrong node during drag = silently ignored (finger passing through)
+
+  // Check if this node is on the direct line path from the last confirmed node
+  // to the expected next node — if so, it's a pass-through and can be ignored
+  if (nextIndex > 0) {
+    const lastConfirmed = pattern[nextIndex - 1];
+    const passThrough = getNodesOnLineBetween(lastConfirmed, expectedNode);
+    if (passThrough.has(node)) {
+      return; // finger passing through — ignore
+    }
+  }
+
+  // For the very first node (nextIndex === 0), there's no line to pass through,
+  // so any wrong node during drag is a fail
+  // For subsequent nodes, touching a non-pass-through wrong node = fail
+  handleNodeClick(node); // will trigger fail since node !== expectedNode
 }
 
+// Handle releasing the finger/mouse — fail if pattern isn't complete yet
+function handleRelease() {
+  if (!isDragging) return;
+  isDragging = false;
+  lastDragNode = -1;
+  // If the user released before completing the pattern, that's a fail
+  if (state === 'input' && userPattern.length > 0 && userPattern.length < pattern.length) {
+    handleFail(-1);
+  }
+}
+
+// --- Mouse ---
 gridContainer.addEventListener('mousedown', (e) => {
   if (state !== 'input') return;
   isDragging = true;
@@ -1299,9 +1360,10 @@ gridContainer.addEventListener('mousemove', (e) => {
   const node = getNodeFromPoint(e.clientX, e.clientY);
   if (node >= 0) handleDragNode(node);
 });
-gridContainer.addEventListener('mouseup', () => { isDragging = false; lastDragNode = -1; });
-gridContainer.addEventListener('mouseleave', () => { isDragging = false; lastDragNode = -1; });
+gridContainer.addEventListener('mouseup', handleRelease);
+gridContainer.addEventListener('mouseleave', handleRelease);
 
+// --- Touch ---
 gridContainer.addEventListener('touchstart', (e) => {
   e.preventDefault();
   if (state !== 'input') return;
@@ -1320,8 +1382,7 @@ gridContainer.addEventListener('touchmove', (e) => {
 }, { passive: false });
 gridContainer.addEventListener('touchend', (e) => {
   e.preventDefault();
-  isDragging = false;
-  lastDragNode = -1;
+  handleRelease();
 }, { passive: false });
 
 // ─── BUTTON HANDLERS ───
