@@ -1262,7 +1262,7 @@ let lastDragNode = -1;
 function getNodeFromPoint(clientX, clientY) {
   const rect = gridContainer.getBoundingClientRect();
   const spacing = rect.width / (GRID_SIZE + 1);
-  const tolerance = spacing * 0.38;
+  const tolerance = spacing * 0.25;
   for (let i = 0; i < NODES; i++) {
     const p = NODE_POSITIONS[i];
     const cx = rect.left + spacing * (p.col + 1);
