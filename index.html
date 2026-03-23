@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Pattern Hacker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #050d08;
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    touch-action: none;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #game {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    height: 100dvh;
+    background: linear-gradient(170deg, #050d08 0%, #0a1a10 40%, #071210 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    color: #00ff88;
+  }
+  .scanlines {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.015) 2px, rgba(0,255,136,0.015) 4px);
+    pointer-events: none; z-index: 10;
+  }
+
+  /* Splash */
+  #splash {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; padding: 24px; gap: 20px; z-index: 2;
+  }
+  #splash.hidden { display: none; }
+  .logo-icon { margin-bottom: 12px; filter: drop-shadow(0 0 20px #00ff8866); animation: float 3s ease-in-out infinite; }
+  .title {
+    font-size: clamp(2.2rem, 8vw, 3.5rem); font-weight: 700; letter-spacing: 0.3em;
+    text-shadow: 0 0 30px #00ff8866, 0 0 60px #00ff8822; color: #00ff88;
+  }
+  .subtitle {
+    font-size: clamp(1.6rem, 6vw, 2.6rem); font-weight: 400; letter-spacing: 0.6em;
+    color: #00ddff; text-shadow: 0 0 20px #00ddff66;
+  }
+  .instructions {
+    text-align: center; font-size: clamp(0.75rem, 2.5vw, 0.9rem); line-height: 1.8; color: #00ff8888; max-width: 300;
+  }
+  .record-badge {
+    padding: 6px 18px; border: 1px solid #ffcc0066; border-radius: 4px;
+    color: #ffcc00; font-size: 0.85rem; letter-spacing: 0.15em; text-shadow: 0 0 8px #ffcc0044;
+  }
+  .record-badge.invisible { visibility: hidden; }
+
+  /* Buttons */
+  .btn-main {
+    background: transparent; border: 2px solid #00ff88; border-radius: 6px;
+    padding: 14px 40px; cursor: pointer; color: #00ff88;
+    font-size: clamp(1rem, 3vw, 1.2rem); font-weight: 700; letter-spacing: 0.25em;
+    font-family: 'Courier New', monospace; text-shadow: 0 0 10px #00ff8866;
+    transition: all 0.2s;
+  }
+  .btn-main:hover { filter: brightness(1.2); }
+  .btn-main:active { transform: scale(0.96); }
+  .btn-small {
+    background: transparent; border: 1px solid #00ff8844; border-radius: 4px;
+    padding: 8px 16px; color: #00ff8888; font-size: 0.75rem; cursor: pointer;
+    font-family: 'Courier New', monospace; letter-spacing: 0.1em;
+  }
+  .btn-icon {
+    background: transparent; border: 1px solid #00ff8833; border-radius: 50%;
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1rem; color: #00ff88; flex-shrink: 0;
+  }
+  .btn-icon:hover, .btn-small:hover { filter: brightness(1.2); }
+
+  /* Game screen */
+  #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; flex: 1; z-index: 2; }
+  #game-screen.active { display: flex; }
+
+  /* HUD */
+  .hud {
+    display: flex; justify-content: space-between; width: 100%; max-width: 400px;
+    padding: 12px 16px 4px; z-index: 2;
+  }
+  .hud-cell { text-align: center; min-width: 60px; }
+  .hud-cell:first-child { text-align: left; }
+  .hud-cell:last-child { text-align: right; }
+  .hud-label { font-size: 0.55rem; letter-spacing: 0.2em; color: #00ff8866; margin-bottom: 2px; }
+  .hud-value { font-size: clamp(1rem, 3.5vw, 1.4rem); font-weight: 700; color: #00ff88; text-shadow: 0 0 8px #00ff8844; }
+
+  /* Lives */
+  .lives { display: flex; gap: 4px; justify-content: center; height: 22px; align-items: center; z-index: 2; }
+  .life { font-size: 1rem; transition: all 0.3s; }
+  .life.lost { opacity: 0.2; filter: grayscale(1); }
+
+  /* Info bar — FIXED HEIGHT */
+  .info-bar {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 4px 0; z-index: 2; height: 28px; flex-shrink: 0;
+  }
+  .combo-badge {
+    padding: 2px 12px; background: #00ff8815; border: 1px solid #00ff8833;
+    border-radius: 20px; font-size: 0.7rem; letter-spacing: 0.2em; color: #00ff88; font-weight: 700;
+  }
+  .combo-badge.invisible { visibility: hidden; }
+  .timer-display {
+    font-size: 0.75rem; letter-spacing: 0.1em; color: #00ddff; font-weight: 700;
+  }
+  .timer-display.warning { color: #ffcc00; }
+  .timer-display.danger { color: #ff3355; animation: pulse 0.5s ease-in-out infinite; }
+  .timer-display.invisible { visibility: hidden; }
+
+  /* Bonus info — FIXED HEIGHT */
+  .bonus-bar {
+    height: 18px; display: flex; align-items: center; justify-content: center; z-index: 2; flex-shrink: 0;
+  }
+  .bonus-info {
+    font-size: 0.6rem; color: #ffcc00aa; letter-spacing: 0.1em;
+  }
+  .bonus-info.invisible { visibility: hidden; }
+
+  /* Status — FIXED HEIGHT */
+  .status-area {
+    height: 52px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 2; padding: 2px 8px;
+    flex-shrink: 0; position: relative;
+  }
+  .status-text {
+    font-size: clamp(0.85rem, 3vw, 1rem); font-weight: 700; letter-spacing: 0.2em; text-align: center;
+  }
+  .new-record {
+    font-size: 0.75rem; color: #ffcc00; margin-top: 2px; letter-spacing: 0.15em;
+    animation: pulse 1s ease-in-out infinite; text-shadow: 0 0 10px #ffcc0066;
+    position: absolute; bottom: 0;
+  }
+
+  /* Grid */
+  .grid-container {
+    position: relative;
+    width: min(78vw, 64vh, 340px);
+    height: min(78vw, 64vh, 340px);
+    margin: 4px auto;
+    z-index: 2; flex-shrink: 0;
+  }
+  .grid-svg {
+    position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;
+  }
+  .node {
+    position: absolute; border-radius: 50%;
+    width: 18%; height: 18%; max-width: 60px; max-height: 60px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s ease-out; cursor: default; z-index: 2;
+    touch-action: none;
+  }
+  .node-inner {
+    width: 30%; height: 30%; border-radius: 50%; transition: all 0.15s ease-out;
+  }
+
+  /* Progress dots — FIXED HEIGHT */
+  .progress-dots {
+    display: flex; gap: 6px; justify-content: center; align-items: center;
+    height: 24px; z-index: 2; flex-shrink: 0; flex-wrap: wrap; padding: 0 20px;
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #00ff8833; transition: background 0.15s; flex-shrink: 0;
+  }
+  .dot.filled { background: #00ff88; box-shadow: 0 0 6px #00ff88; }
+
+  /* Bottom bar — FIXED HEIGHT */
+  .bottom-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; height: 56px; z-index: 2; flex-shrink: 0;
+  }
+  .btn-repeat {
+    background: transparent; border: 1px solid #00ddff55; border-radius: 4px;
+    padding: 6px 14px; color: #00ddffaa; font-size: 0.65rem; cursor: pointer;
+    font-family: 'Courier New', monospace; letter-spacing: 0.1em; transition: all 0.2s;
+  }
+  .btn-repeat.invisible { visibility: hidden; pointer-events: none; }
+  .btn-repeat:hover { border-color: #00ddff; color: #00ddff; }
+  .btn-repeat:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-main.invisible { visibility: hidden; pointer-events: none; }
+
+  /* ─── SCORE MODAL ─── */
+  .score-overlay {
+    display: none;
+    position: absolute; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.75);
+    align-items: center; justify-content: center;
+    animation: overlayIn 0.3s ease-out;
+  }
+  .score-overlay.active { display: flex; }
+  .score-panel {
+    background: linear-gradient(170deg, #0a1a10 0%, #0d2218 50%, #081510 100%);
+    border: 1px solid #00ff8844;
+    border-radius: 8px;
+    padding: 20px 24px 16px;
+    width: 88%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    box-shadow: 0 0 40px #00ff8822, 0 0 80px #00ff8811, inset 0 0 30px #00ff8808;
+    animation: panelIn 0.4s ease-out;
+    position: relative;
+    overflow: hidden;
+  }
+  .score-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.02) 2px, rgba(0,255,136,0.02) 4px);
+    pointer-events: none;
+  }
+  .score-panel-title {
+    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.3em;
+    color: #00ff88; text-shadow: 0 0 15px #00ff8866;
+    margin-bottom: 16px;
+  }
+  .score-row {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; padding: 6px 0;
+    border-bottom: 1px solid #00ff8815;
+    opacity: 0;
+    animation: rowSlideIn 0.3s ease-out forwards;
+  }
+  .score-row:last-of-type { border-bottom: none; }
+  .score-row-label {
+    font-size: 0.7rem; letter-spacing: 0.15em; color: #00ff8888;
+  }
+  .score-row-value {
+    font-size: 0.85rem; font-weight: 700; letter-spacing: 0.1em;
+  }
+  .score-row-value.green { color: #00ff88; text-shadow: 0 0 8px #00ff8844; }
+  .score-row-value.cyan { color: #00ddff; text-shadow: 0 0 8px #00ddff44; }
+  .score-row-value.yellow { color: #ffcc00; text-shadow: 0 0 8px #ffcc0044; }
+  .score-row-value.pink { color: #ff66ff; text-shadow: 0 0 8px #ff66ff44; }
+  .score-divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, #00ff8844, transparent);
+    margin: 8px 0;
+    opacity: 0;
+    animation: rowSlideIn 0.3s ease-out forwards;
+  }
+  .score-total-row {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; padding: 8px 0 4px;
+    opacity: 0;
+    animation: rowSlideIn 0.3s ease-out forwards;
+  }
+  .score-total-label {
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em; color: #00ff88;
+  }
+  .score-total-value {
+    font-size: 1.2rem; font-weight: 700; color: #00ff88;
+    text-shadow: 0 0 12px #00ff8866;
+  }
+  .score-record {
+    font-size: 0.75rem; color: #ffcc00; letter-spacing: 0.15em;
+    animation: pulse 1s ease-in-out infinite; text-shadow: 0 0 10px #ffcc0066;
+    margin-top: 6px;
+    opacity: 0;
+    animation: rowSlideIn 0.3s ease-out forwards, pulse 1s ease-in-out infinite 0.3s;
+  }
+  .score-btn {
+    margin-top: 14px;
+    background: transparent; border: 1px solid #00ff8866; border-radius: 4px;
+    padding: 10px 32px; cursor: pointer; color: #00ff88;
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em;
+    font-family: 'Courier New', monospace; text-shadow: 0 0 8px #00ff8844;
+    transition: all 0.2s;
+    opacity: 0;
+    animation: rowSlideIn 0.3s ease-out forwards;
+  }
+  .score-btn:hover { border-color: #00ff88; filter: brightness(1.3); }
+  .score-btn:active { transform: scale(0.96); }
+
+  @keyframes overlayIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  @keyframes panelIn {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes rowSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Animations */
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @keyframes shakeX {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+
+  /* Mobile adjustments */
+  @media (max-height: 600px) {
+    .grid-container { width: min(65vw, 50vh, 280px); height: min(65vw, 50vh, 280px); }
+    .hud { padding: 8px 16px 2px; }
+    .status-area { height: 40px; }
+    .bottom-bar { height: 48px; }
+    .score-panel { padding: 14px 18px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div class="scanlines"></div>
+
+  <!-- SPLASH SCREEN -->
+  <div id="splash">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div class="logo-icon">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect x="12" y="28" width="40" height="28" rx="4" stroke="#00ff88" stroke-width="2.5" fill="none"/>
+          <path d="M22 28V20a10 10 0 0 1 20 0v8" stroke="#00ff88" stroke-width="2.5" fill="none"/>
+          <circle cx="32" cy="42" r="4" fill="#00ff88"/>
+          <line x1="32" y1="46" x2="32" y2="50" stroke="#00ff88" stroke-width="2.5"/>
+        </svg>
+      </div>
+      <div class="title" id="title-text">PATTERN</div>
+      <div class="subtitle" id="subtitle-text">HACKER</div>
+    </div>
+    <p class="instructions">
+      Watch the lines. Repeat the pattern.<br>
+      Each level adds one more line.<br>
+      You have 3 lives. Be fast for bonus points!
+    </p>
+    <div class="record-badge invisible" id="splash-record">BEST: LEVEL <span id="splash-record-val">0</span></div>
+    <button class="btn-main" id="btn-start">JACK IN</button>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn-small" id="btn-mute-sfx-splash">🔊 SFX ON</button>
+      <button class="btn-small" id="btn-mute-music-splash">🎵 MUSIC ON</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-screen">
+    <div class="hud">
+      <div class="hud-cell">
+        <div class="hud-label">LEVEL</div>
+        <div class="hud-value" id="hud-level">1</div>
+      </div>
+      <div class="hud-cell">
+        <div class="hud-label">SCORE</div>
+        <div class="hud-value" id="hud-score">0</div>
+      </div>
+      <div class="hud-cell">
+        <div class="hud-label">BEST</div>
+        <div class="hud-value" id="hud-best" style="color:#ffcc00">0</div>
+      </div>
+    </div>
+
+    <div class="lives" id="lives-display"></div>
+
+    <div class="info-bar">
+      <div class="combo-badge invisible" id="combo-badge">x1 COMBO</div>
+      <div class="timer-display invisible" id="timer-display">⏱ 10.0s</div>
+    </div>
+
+    <div class="bonus-bar">
+      <div class="bonus-info invisible" id="bonus-info">COMBO BONUS: x2 | SPEED BONUS ACTIVE</div>
+    </div>
+
+    <div class="status-area">
+      <div class="status-text" id="status-text"></div>
+    </div>
+
+    <div class="grid-container" id="grid-container">
+      <svg class="grid-svg" id="grid-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <div class="progress-dots" id="progress-dots"></div>
+
+    <div class="bottom-bar" id="bottom-bar">
+      <button class="btn-repeat invisible" id="btn-repeat">🔄 SHOW AGAIN</button>
+      <button class="btn-main invisible" id="btn-retry">RETRY</button>
+      <button class="btn-icon" id="btn-mute-sfx">🔊</button>
+      <button class="btn-icon" id="btn-mute-music">🎵</button>
+    </div>
+
+    <!-- Score overlay -->
+    <div class="score-overlay" id="score-overlay">
+      <div class="score-panel" id="score-panel"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───
+const GRID_SIZE = 3;
+const NODES = GRID_SIZE * GRID_SIZE;
+const NODE_POSITIONS = Array.from({ length: NODES }, (_, i) => ({
+  row: Math.floor(i / GRID_SIZE),
+  col: i % GRID_SIZE,
+}));
+const SHOW_DELAY_BASE = 700;
+const SHOW_DELAY_MIN = 350;
+const SHOW_DELAY_DECAY = 25;
+const MAX_LIVES = 3;
+const BASE_TIME_LIMIT = 12;
+const TIME_PER_NODE = 2.5;
+const PERFECT_TIME_RATIO = 0.4;
+
+// Overlap line color — used when a segment is traversed more than once
+const OVERLAP_COLOR_SHOW = '#ff66ff';
+const OVERLAP_COLOR_USER = '#ff66ff';
+
+// ─── STATE ───
+let state = 'idle';
+let level = 1;
+let pattern = [];
+let userPattern = [];
+let showIndex = -1;
+let activeNode = -1;
+let failNode = -1;
+let score = 0;
+let combo = 0;
+let lives = MAX_LIVES;
+let highScore = 0;
+let isNewRecord = false;
+let sfxMuted = false;
+let musicMuted = false;
+let repeatUsed = false;
+let timerInterval = null;
+let timeRemaining = 0;
+let timeLimitForLevel = 0;
+let showTimer = null;
+let isDragging = false;
+let pendingNextLevel = null; // timeout for auto-advancing after score panel
+
+// Lines stored as simple [from, to] arrays
+let shownLineSegments = [];
+let userLineSegments = [];
+
+// ─── AUDIO ENGINE ───
+class AudioEngine {
+  constructor() { this.ctx = null; this.initialized = false; }
+  init() {
+    if (this.initialized) return;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.initialized = true;
+    } catch(e) {}
+  }
+  _play(freq, duration, type = 'sine', vol = 0.15, detune = 0) {
+    if (!this.ctx || sfxMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    if (detune) osc.detune.setValueAtTime(detune, now);
+    gain.gain.setValueAtTime(vol, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    osc.connect(gain).connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+  nodeShow(index) {
+    const freqs = [261, 293, 329, 349, 392, 440, 493, 523, 587];
+    this._play(freqs[index % 9], 0.3, 'sine', 0.12);
+    this._play(freqs[index % 9] * 1.5, 0.2, 'triangle', 0.05);
+  }
+  nodeInput(index) {
+    const freqs = [261, 293, 329, 349, 392, 440, 493, 523, 587];
+    this._play(freqs[index % 9], 0.15, 'square', 0.06);
+  }
+  success() {
+    [0, 100, 200].forEach((d, i) =>
+      setTimeout(() => this._play(523 * (1 + i * 0.25), 0.3, 'sine', 0.12), d)
+    );
+  }
+  fail() {
+    this._play(130, 0.5, 'sawtooth', 0.12);
+    this._play(110, 0.6, 'square', 0.08, -20);
+  }
+  levelUp() {
+    [0, 80, 160, 280].forEach((d, i) =>
+      setTimeout(() => this._play(440 * (1 + i * 0.18), 0.25, 'sine', 0.1), d)
+    );
+  }
+  newRecord() {
+    [0, 100, 200, 300, 450, 600].forEach((d, i) =>
+      setTimeout(() => this._play(523 * (1 + i * 0.15), 0.35, 'triangle', 0.12), d)
+    );
+  }
+  click() { this._play(800, 0.05, 'sine', 0.06); }
+  lifeLost() {
+    this._play(200, 0.3, 'sawtooth', 0.1);
+    setTimeout(() => this._play(150, 0.4, 'square', 0.08), 150);
+  }
+}
+const audio = new AudioEngine();
+
+// ─── MUSIC ENGINE ───
+let musicAudio = null;
+function initMusic() {
+  if (musicAudio) return;
+  musicAudio = new Audio('music.mp3');
+  musicAudio.loop = true;
+  musicAudio.volume = 0.25;
+}
+function playMusic() {
+  initMusic();
+  if (!musicMuted) musicAudio.play().catch(() => {});
+}
+function stopMusic() {
+  if (musicAudio) { musicAudio.pause(); musicAudio.currentTime = 0; }
+}
+function toggleMusic() {
+  musicMuted = !musicMuted;
+  localStorage.setItem('ph-music-muted', musicMuted ? '1' : '0');
+  if (musicMuted) {
+    if (musicAudio) musicAudio.pause();
+  } else {
+    if (musicAudio && state !== 'idle') musicAudio.play().catch(() => {});
+  }
+  updateMusicButtons();
+}
+function toggleSfx() {
+  sfxMuted = !sfxMuted;
+  localStorage.setItem('ph-sfx-muted', sfxMuted ? '1' : '0');
+  updateSfxButtons();
+}
+function updateMusicButtons() {
+  const label = musicMuted ? '🎵 MUSIC OFF' : '🎵 MUSIC ON';
+  const icon = musicMuted ? '🚫' : '🎵';
+  document.getElementById('btn-mute-music-splash').textContent = label;
+  document.getElementById('btn-mute-music').textContent = icon;
+}
+function updateSfxButtons() {
+  const label = sfxMuted ? '🔇 SFX OFF' : '🔊 SFX ON';
+  const icon = sfxMuted ? '🔇' : '🔊';
+  document.getElementById('btn-mute-sfx-splash').textContent = label;
+  document.getElementById('btn-mute-sfx').textContent = icon;
+}
+
+// ─── HIGH SCORE ───
+function loadHighScore() {
+  try { highScore = parseInt(localStorage.getItem('ph-highscore') || '0', 10) || 0; } catch {}
+  if (highScore > 0) {
+    document.getElementById('splash-record').classList.remove('invisible');
+    document.getElementById('splash-record-val').textContent = highScore;
+  }
+}
+function saveHighScore(val) {
+  try { localStorage.setItem('ph-highscore', String(val)); } catch {}
+}
+
+// ─── SEGMENT OVERLAP DETECTION ───
+// Returns a Set of segment keys that appear more than once in a pattern
+function segmentKey(a, b) {
+  return a < b ? `${a}-${b}` : `${b}-${a}`;
+}
+
+function findOverlappingSegments(pat) {
+  const counts = {};
+  for (let i = 1; i < pat.length; i++) {
+    const key = segmentKey(pat[i - 1], pat[i]);
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  const overlaps = new Set();
+  for (const [key, count] of Object.entries(counts)) {
+    if (count > 1) overlaps.add(key);
+  }
+  return overlaps;
+}
+
+// ─── PATTERN GENERATION ───
+// Pattern = sequence of nodes. Each consecutive pair = one "line".
+// Lines can connect ANY two different nodes (not just adjacent).
+// Level N has N+1 lines (= N+2 nodes in the sequence).
+// Mix of short and long lines, with increasing long-line probability.
+function generatePattern(numLines) {
+  const numNodes = numLines + 1;
+  const pat = [];
+  const first = Math.floor(Math.random() * NODES);
+  pat.push(first);
+  const used = new Set([first]);
+
+  while (pat.length < numNodes) {
+    const last = pat[pat.length - 1];
+    const lp = NODE_POSITIONS[last];
+
+    // Gather all candidates (anything except current node)
+    const unused = [];
+    const usedNodes = [];
+    for (let i = 0; i < NODES; i++) {
+      if (i === last) continue;
+      if (!used.has(i)) unused.push(i);
+      else usedNodes.push(i);
+    }
+
+    // Pick from unused first, then used (for patterns > 9 nodes)
+    let pool = unused.length > 0 ? unused : usedNodes;
+    if (pool.length === 0) break;
+
+    // Bias: higher levels have more chance of picking far nodes
+    // "Far" = not adjacent (row or col distance > 1)
+    const farChance = Math.min(0.7, 0.2 + (level - 1) * 0.06);
+    const adjacent = [];
+    const far = [];
+    for (const i of pool) {
+      const p = NODE_POSITIONS[i];
+      const isAdj = Math.abs(p.row - lp.row) <= 1 && Math.abs(p.col - lp.col) <= 1;
+      if (isAdj) adjacent.push(i);
+      else far.push(i);
+    }
+
+    let chosen;
+    if (far.length > 0 && (adjacent.length === 0 || Math.random() < farChance)) {
+      chosen = far[Math.floor(Math.random() * far.length)];
+    } else if (adjacent.length > 0) {
+      chosen = adjacent[Math.floor(Math.random() * adjacent.length)];
+    } else {
+      chosen = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    pat.push(chosen);
+    used.add(chosen);
+  }
+  return pat;
+}
+
+// ─── GLITCH TEXT ───
+function glitchText(el, text) {
+  const chars = '01!@#$%^&*<>{}[]';
+  let step = 0;
+  el.textContent = text.split('').map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const iv = setInterval(() => {
+    step++;
+    el.textContent = text.split('').map((c, i) =>
+      i < step ? c : chars[Math.floor(Math.random() * chars.length)]
+    ).join('');
+    if (step >= text.length) clearInterval(iv);
+  }, 35);
+}
+
+// ─── DOM REFS ───
+const $ = id => document.getElementById(id);
+const splash = $('splash');
+const gameScreen = $('game-screen');
+const gridContainer = $('grid-container');
+const gridSvg = $('grid-svg');
+const hudLevel = $('hud-level');
+const hudScore = $('hud-score');
+const hudBest = $('hud-best');
+const livesDisplay = $('lives-display');
+const comboBadge = $('combo-badge');
+const timerDisplay = $('timer-display');
+const bonusInfo = $('bonus-info');
+const statusText = $('status-text');
+const progressDots = $('progress-dots');
+const btnRetry = $('btn-retry');
+const btnRepeat = $('btn-repeat');
+const scoreOverlay = $('score-overlay');
+const scorePanel = $('score-panel');
+
+// ─── NODE HELPERS ───
+function getNodeCenter(idx) {
+  const p = NODE_POSITIONS[idx];
+  const spacing = 100 / (GRID_SIZE + 1);
+  return { x: spacing * (p.col + 1), y: spacing * (p.row + 1) };
+}
+
+// ─── RENDER ───
+let nodeEls = [];
+function createGrid() {
+  nodeEls.forEach(n => n.remove());
+  nodeEls = [];
+  for (let idx = 0; idx < NODES; idx++) {
+    const pos = NODE_POSITIONS[idx];
+    const spacing = 100 / (GRID_SIZE + 1);
+    const cx = spacing * (pos.col + 1);
+    const cy = spacing * (pos.row + 1);
+    const node = document.createElement('div');
+    node.className = 'node';
+    node.style.left = cx + '%';
+    node.style.top = cy + '%';
+    node.style.transform = 'translate(-50%, -50%) scale(1)';
+    node.style.background = 'radial-gradient(circle at 40% 35%, #1a3a2a, #0a1a10)';
+    node.style.border = '2.5px solid #00ff8855';
+    node.style.boxShadow = 'none';
+    node.dataset.idx = idx;
+
+    const inner = document.createElement('div');
+    inner.className = 'node-inner';
+    inner.style.background = '#00ff8833';
+    node.appendChild(inner);
+    gridContainer.appendChild(node);
+    nodeEls.push(node);
+
+    node.addEventListener('click', () => {
+      if (state === 'input') handleNodeClick(idx);
+    });
+  }
+}
+
+function updateNode(idx, { color = '#1a3a2a', border = '#00ff8855', scale = 1, glow = 'none', innerColor = '#00ff8833' } = {}) {
+  const node = nodeEls[idx];
+  if (!node) return;
+  node.style.background = `radial-gradient(circle at 40% 35%, ${color}, #0a1a10)`;
+  node.style.border = `2.5px solid ${border}`;
+  node.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  node.style.boxShadow = glow;
+  node.style.cursor = state === 'input' ? 'pointer' : 'default';
+  node.querySelector('.node-inner').style.background = innerColor;
+}
+
+function resetAllNodes() {
+  for (let i = 0; i < NODES; i++) updateNode(i);
+}
+
+// Render lines: all in baseColor, overlapping segments in overlapColor
+function renderLines(segments, baseColor, overlapColor, overlaps, width = 3, opacity = 1) {
+  let html = '';
+  // Track which segments we've already drawn once
+  const drawn = {};
+  segments.forEach(([from, to]) => {
+    const a = getNodeCenter(from);
+    const b = getNodeCenter(to);
+    const key = segmentKey(from, to);
+    const isOverlap = overlaps.has(key);
+    const count = drawn[key] || 0;
+    drawn[key] = count + 1;
+
+    let color = baseColor;
+    let w = width;
+    let ox = 0, oy = 0;
+    if (isOverlap && count > 0) {
+      // This is a repeated traversal — draw in overlap color, offset slightly
+      color = overlapColor;
+      w = width + 0.5;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      // Perpendicular offset in SVG percentage units (small amount)
+      ox = (-dy / len) * 1.8 * count;
+      oy = (dx / len) * 1.8 * count;
+    }
+    html += `<line x1="${a.x + ox}%" y1="${a.y + oy}%" x2="${b.x + ox}%" y2="${b.y + oy}%"
+      stroke="${color}" stroke-width="${w}" stroke-linecap="round" opacity="${opacity}"
+      style="filter:drop-shadow(0 0 4px ${color})"/>`;
+  });
+  return html;
+}
+
+function renderSvg() {
+  let svg = '';
+  if (state === 'showing') {
+    const overlaps = findOverlappingSegments(pattern);
+    svg += renderLines(shownLineSegments, '#00ddff', OVERLAP_COLOR_SHOW, overlaps, 3, 0.9);
+  } else if (state === 'input' || state === 'success') {
+    const overlaps = findOverlappingSegments(userPattern);
+    svg += renderLines(userLineSegments, '#00ff88', OVERLAP_COLOR_USER, overlaps, 3, 0.9);
+  } else if (state === 'fail' || state === 'gameover') {
+    // Build correct lines from full pattern
+    const correctSegs = [];
+    for (let i = 1; i < pattern.length; i++) correctSegs.push([pattern[i-1], pattern[i]]);
+    const overlaps = findOverlappingSegments(pattern);
+    svg += renderLines(correctSegs, '#ff3355', '#cc2266', overlaps, 2, 0.3);
+    const userOverlaps = findOverlappingSegments(userPattern);
+    svg += renderLines(userLineSegments, '#ff3355', '#cc2266', userOverlaps, 3, 0.6);
+  }
+  gridSvg.innerHTML = svg;
+}
+
+function updateLives() {
+  let html = '';
+  for (let i = 0; i < MAX_LIVES; i++) {
+    html += `<span class="life ${i >= lives ? 'lost' : ''}">💚</span>`;
+  }
+  livesDisplay.innerHTML = html;
+}
+
+function updateHud() {
+  hudLevel.textContent = level;
+  hudScore.textContent = score.toLocaleString();
+  hudBest.textContent = highScore;
+  const colors = { showing: '#00ddff', success: '#00ff88', fail: '#ff3355', gameover: '#ff3355' };
+  hudLevel.style.color = colors[state] || '#00ff88';
+}
+
+function updateProgressDots() {
+  if (state !== 'input') {
+    progressDots.innerHTML = '';
+    return;
+  }
+  let html = '';
+  const maxDots = 30;
+  const total = pattern.length;
+  const filled = userPattern.length;
+  if (total <= maxDots) {
+    for (let i = 0; i < total; i++) {
+      html += `<div class="dot ${i < filled ? 'filled' : ''}"></div>`;
+    }
+  } else {
+    for (let i = 0; i < 10; i++) {
+      html += `<div class="dot ${i < filled ? 'filled' : ''}"></div>`;
+    }
+    html += `<span style="color:#00ff8866;font-size:0.6rem;margin:0 2px">...</span>`;
+    for (let i = total - 10; i < total; i++) {
+      html += `<div class="dot ${i < filled ? 'filled' : ''}"></div>`;
+    }
+  }
+  progressDots.innerHTML = html;
+}
+
+function updateCombo() {
+  if (combo > 1 && state !== 'fail' && state !== 'gameover') {
+    comboBadge.classList.remove('invisible');
+    comboBadge.textContent = `x${combo} COMBO`;
+  } else {
+    comboBadge.classList.add('invisible');
+  }
+}
+
+function updateBonusInfo() {
+  if (combo > 1 && state === 'input') {
+    bonusInfo.classList.remove('invisible');
+    bonusInfo.textContent = `COMBO x${combo} | SPEED BONUS ACTIVE`;
+  } else {
+    bonusInfo.classList.add('invisible');
+  }
+}
+
+// ─── TIMER ───
+function getTimeLimitForLevel(lvl) {
+  const numLines = lvl + 1;
+  return Math.max(5, BASE_TIME_LIMIT + (numLines - 2) * TIME_PER_NODE - (lvl - 1) * 0.3);
+}
+
+function startTimer() {
+  stopTimer();
+  timeLimitForLevel = getTimeLimitForLevel(level);
+  timeRemaining = timeLimitForLevel;
+  timerDisplay.classList.remove('invisible', 'warning', 'danger');
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeRemaining = Math.max(0, timeRemaining - 0.1);
+    updateTimerDisplay();
+    if (timeRemaining <= 0) {
+      stopTimer();
+      handleFail(-1);
+    }
+  }, 100);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function updateTimerDisplay() {
+  timerDisplay.textContent = `⏱ ${timeRemaining.toFixed(1)}s`;
+  timerDisplay.classList.remove('warning', 'danger');
+  const ratio = timeRemaining / timeLimitForLevel;
+  if (ratio < 0.25) timerDisplay.classList.add('danger');
+  else if (ratio < 0.5) timerDisplay.classList.add('warning');
+}
+
+// Time bonus = additive points based on seconds remaining.
+// Faster = more points. Scales with level.
+function calculateTimeBonusPoints() {
+  const secsLeft = timeRemaining;
+  const ratio = secsLeft / timeLimitForLevel;
+  // Points per second remaining, scaling with level
+  const perSec = 5 + level * 3;
+  const raw = Math.floor(secsLeft * perSec);
+  return Math.max(0, raw);
+}
+
+function getTimeBonusLabel(secsLeft, timeLimit) {
+  const ratio = secsLeft / timeLimit;
+  if (ratio >= 0.6) return 'PERFECT';
+  if (ratio >= 0.4) return 'FAST';
+  if (ratio >= 0.2) return 'GOOD';
+  return 'STANDARD';
+}
+
+// ─── SCORE MODAL ───
+function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, timeBonusPoints, timeBonusLabel, totalScore, timeUsed, timeLimit, newRecord, onContinue }) {
+  let delay = 0;
+  const d = (ms) => { delay += ms; return `animation-delay:${delay}ms;`; };
+
+  let html = `<div class="score-panel-title">// ACCESS GRANTED</div>`;
+
+  html += `<div class="score-row" style="${d(100)}">
+    <span class="score-row-label">LEVEL</span>
+    <span class="score-row-value cyan">${levelNum}</span>
+  </div>`;
+
+  html += `<div class="score-row" style="${d(100)}">
+    <span class="score-row-label">BASE SCORE</span>
+    <span class="score-row-value green">+${baseScore.toLocaleString()}</span>
+  </div>`;
+
+  if (comboMultiplier > 1) {
+    const comboBonus = comboScore - baseScore;
+    html += `<div class="score-row" style="${d(100)}">
+      <span class="score-row-label">COMBO x${comboMultiplier}</span>
+      <span class="score-row-value yellow">+${comboBonus.toLocaleString()}</span>
+    </div>`;
+  }
+
+  html += `<div class="score-row" style="${d(100)}">
+    <span class="score-row-label">TIME</span>
+    <span class="score-row-value cyan">${timeUsed.toFixed(1)}s / ${timeLimit.toFixed(1)}s</span>
+  </div>`;
+
+  const tbColor = timeBonusLabel === 'PERFECT' ? 'pink' : timeBonusLabel === 'FAST' ? 'yellow' : timeBonusLabel === 'GOOD' ? 'cyan' : 'green';
+  html += `<div class="score-row" style="${d(100)}">
+    <span class="score-row-label">SPEED ${timeBonusLabel}</span>
+    <span class="score-row-value ${tbColor}">+${timeBonusPoints.toLocaleString()}</span>
+  </div>`;
+
+  html += `<div class="score-divider" style="${d(80)}"></div>`;
+
+  html += `<div class="score-total-row" style="${d(100)}">
+    <span class="score-total-label">TOTAL</span>
+    <span class="score-total-value">+${totalScore.toLocaleString()}</span>
+  </div>`;
+
+  if (newRecord) {
+    html += `<div class="score-record" style="${d(100)}">★ NEW RECORD: LEVEL ${levelNum} ★</div>`;
+  }
+
+  html += `<button class="score-btn" id="score-continue-btn" style="${d(150)}">CONTINUE ▶</button>`;
+
+  scorePanel.innerHTML = html;
+  scoreOverlay.classList.add('active');
+
+  $('score-continue-btn').addEventListener('click', () => {
+    if (!sfxMuted) audio.click();
+    scoreOverlay.classList.remove('active');
+    if (onContinue) onContinue();
+  });
+}
+
+function hideScoreModal() {
+  scoreOverlay.classList.remove('active');
+}
+
+// ─── SHOW PATTERN ───
+function showPatternSequence(pat, onComplete) {
+  state = 'showing';
+  showIndex = -1;
+  shownLineSegments = [];
+  activeNode = -1;
+  userPattern = [];
+  userLineSegments = [];
+  failNode = -1;
+  resetAllNodes();
+  renderSvg();
+  updateHud();
+  updateProgressDots();
+  updateCombo();
+  updateBonusInfo();
+  btnRepeat.classList.add('invisible');
+  btnRetry.classList.add('invisible');
+  timerDisplay.classList.add('invisible');
+
+  statusText.innerHTML = '';
+  glitchText(statusText, 'DECRYPTING...');
+  statusText.style.color = '#00ddff';
+
+  const showDelay = Math.max(SHOW_DELAY_MIN, SHOW_DELAY_BASE - (level - 1) * SHOW_DELAY_DECAY);
+  let i = 0;
+
+  showTimer = setTimeout(function step() {
+    if (i < pat.length) {
+      const curr = i;
+      showIndex = curr;
+      activeNode = pat[curr];
+      if (curr > 0) {
+        const prevIdx = pat[curr - 1];
+        updateNode(prevIdx, { color: '#00ddff44', border: '#00ddff66', scale: 1, glow: 'none', innerColor: '#00ddff66' });
+      }
+      updateNode(pat[curr], {
+        color: '#00ddff', border: '#00ddff', scale: 1.3,
+        glow: '0 0 20px #00ddff, 0 0 40px #00ddff55', innerColor: '#00ddff'
+      });
+      if (!sfxMuted) audio.nodeShow(pat[curr]);
+      if (curr > 0) {
+        shownLineSegments.push([pat[curr - 1], pat[curr]]);
+      }
+      renderSvg();
+      i++;
+      showTimer = setTimeout(step, showDelay);
+    } else {
+      showTimer = setTimeout(() => {
+        showIndex = -1;
+        activeNode = -1;
+        shownLineSegments = [];
+        resetAllNodes();
+        renderSvg();
+        if (onComplete) onComplete();
+      }, 600);
+    }
+  }, 500);
+}
+
+function enterInputState() {
+  state = 'input';
+  const numLines = pattern.length - 1;
+  statusText.innerHTML = `REPEAT PATTERN (0/${numLines} LINES)`;
+  statusText.style.color = '#00ff88';
+  updateProgressDots();
+  updateCombo();
+  updateBonusInfo();
+  startTimer();
+  if (!repeatUsed) {
+    btnRepeat.classList.remove('invisible');
+    btnRepeat.disabled = false;
+  } else {
+    btnRepeat.classList.add('invisible');
+  }
+  for (let i = 0; i < NODES; i++) nodeEls[i].style.cursor = 'pointer';
+}
+
+// ─── START ───
+function startGame() {
+  audio.init();
+  initMusic();
+  if (!sfxMuted) audio.click();
+  splash.classList.add('hidden');
+  gameScreen.classList.add('active');
+  score = 0;
+  combo = 0;
+  lives = MAX_LIVES;
+  isNewRecord = false;
+  updateLives();
+  startLevel(1);
+  playMusic();
+}
+
+function startLevel(lvl) {
+  level = lvl;
+  repeatUsed = false;
+  // lvl + 1 lines = lvl + 2 nodes in the sequence
+  const pat = generatePattern(lvl + 1);
+  pattern = pat;
+  updateHud();
+  showPatternSequence(pat, enterInputState);
+}
+
+// ─── INPUT HANDLING ───
+function handleNodeClick(idx) {
+  if (state !== 'input') return;
+  const nextIndex = userPattern.length;
+
+  if (pattern[nextIndex] !== idx) {
+    if (!sfxMuted) audio.nodeInput(idx);
+    handleFail(idx);
+    return;
+  }
+
+  if (!sfxMuted) audio.nodeInput(idx);
+  userPattern.push(idx);
+
+  if (nextIndex > 0) {
+    userLineSegments.push([pattern[nextIndex - 1], idx]);
+  }
+
+  updateNode(idx, {
+    color: '#00ff88', border: '#00ff88', scale: 1.15,
+    glow: '0 0 12px #00ff88', innerColor: '#00ff88'
+  });
+  activeNode = idx;
+  renderSvg();
+  const linesDrawn = Math.max(0, userPattern.length - 1);
+  const totalLines = pattern.length - 1;
+  statusText.textContent = `REPEAT PATTERN (${linesDrawn}/${totalLines} LINES)`;
+  updateProgressDots();
+
+  if (userPattern.length === pattern.length) {
+    // SUCCESS
+    stopTimer();
+    state = 'success';
+    const newCombo = combo + 1;
+    combo = newCombo;
+
+    const timeUsed = timeLimitForLevel - timeRemaining;
+    const timeBonusPoints = calculateTimeBonusPoints();
+    const timeBonusLabel = getTimeBonusLabel(timeRemaining, timeLimitForLevel);
+    const baseScore = level * 100;
+    const comboMultiplier = newCombo;
+    // Base * combo + time bonus (additive)
+    const comboScore = Math.round(baseScore * comboMultiplier);
+    const levelScore = comboScore + timeBonusPoints;
+    score += levelScore;
+
+    const uniqueNodes = [...new Set(pattern)];
+    uniqueNodes.forEach(n => updateNode(n, {
+      color: '#00ff88', border: '#00ff88', scale: 1,
+      glow: '0 0 16px #00ff88', innerColor: '#00ff88'
+    }));
+
+    if (!sfxMuted) audio.success();
+
+    glitchText(statusText, 'ACCESS GRANTED');
+    statusText.style.color = '#00ff88';
+
+    const maxReachedLevel = level;
+    let isNewRec = false;
+    if (maxReachedLevel > highScore) {
+      highScore = maxReachedLevel;
+      isNewRecord = true;
+      isNewRec = true;
+      saveHighScore(maxReachedLevel);
+      if (!sfxMuted) setTimeout(() => audio.newRecord(), 400);
+    } else if (!sfxMuted) {
+      setTimeout(() => audio.levelUp(), 300);
+    }
+
+    updateHud();
+    updateCombo();
+    btnRepeat.classList.add('invisible');
+    timerDisplay.classList.add('invisible');
+
+    // Show score modal after a short delay
+    setTimeout(() => {
+      showScoreModal({
+        levelNum: level,
+        baseScore,
+        comboMultiplier,
+        comboScore,
+        timeBonusPoints,
+        timeBonusLabel,
+        totalScore: levelScore,
+        timeUsed,
+        timeLimit: timeLimitForLevel,
+        newRecord: isNewRec,
+        onContinue: () => {
+          startLevel(level + 1);
+        }
+      });
+    }, 800);
+  }
+}
+
+function handleFail(idx) {
+  stopTimer();
+  lives--;
+  updateLives();
+
+  if (idx >= 0) {
+    failNode = idx;
+    updateNode(idx, {
+      color: '#ff3355', border: '#ff3355', scale: 1.3,
+      glow: '0 0 20px #ff3355', innerColor: '#ff3355'
+    });
+  }
+
+  const uniqueInPattern = [...new Set(pattern)];
+  uniqueInPattern.forEach(n => {
+    if (n !== idx) {
+      updateNode(n, { color: '#ff335555', border: '#ff335588', innerColor: '#ff335555' });
+    }
+  });
+
+  combo = 0;
+  updateCombo();
+  renderSvg();
+  btnRepeat.classList.add('invisible');
+  timerDisplay.classList.add('invisible');
+  bonusInfo.classList.add('invisible');
+
+  gridContainer.style.animation = 'shakeX 0.4s ease-out';
+  setTimeout(() => gridContainer.style.animation = '', 400);
+
+  if (lives <= 0) {
+    state = 'gameover';
+    if (!sfxMuted) audio.fail();
+
+    statusText.innerHTML = '';
+    glitchText(statusText, 'SYSTEM BREACH FAILED');
+    statusText.style.color = '#ff3355';
+
+    if (level > highScore) {
+      highScore = level;
+      isNewRecord = true;
+      saveHighScore(level);
+    }
+
+    setTimeout(() => {
+      if (isNewRecord) {
+        const rec = document.createElement('div');
+        rec.className = 'new-record';
+        rec.style.color = '#ffcc00';
+        rec.textContent = `★ NEW RECORD: LEVEL ${highScore} ★`;
+        statusText.parentElement.appendChild(rec);
+      }
+    }, 300);
+
+    updateHud();
+    btnRetry.classList.remove('invisible');
+    btnRetry.textContent = 'RETRY';
+  } else {
+    state = 'fail';
+    if (!sfxMuted) audio.lifeLost();
+
+    statusText.innerHTML = '';
+    glitchText(statusText, `ACCESS DENIED — ${lives} ${lives === 1 ? 'LIFE' : 'LIVES'} LEFT`);
+    statusText.style.color = '#ff3355';
+
+    updateHud();
+
+    showTimer = setTimeout(() => {
+      resetAllNodes();
+      renderSvg();
+      repeatUsed = false;
+      showPatternSequence(pattern, enterInputState);
+    }, 2000);
+  }
+}
+
+// ─── REPEAT PATTERN ───
+function handleRepeat() {
+  if (state !== 'input' || repeatUsed) return;
+  repeatUsed = true;
+  stopTimer();
+  btnRepeat.classList.add('invisible');
+  timerDisplay.classList.add('invisible');
+
+  userPattern = [];
+  userLineSegments = [];
+  resetAllNodes();
+  renderSvg();
+
+  showPatternSequence(pattern, enterInputState);
+}
+
+// ─── TOUCH / DRAG ───
+function getNodeFromPoint(clientX, clientY) {
+  const rect = gridContainer.getBoundingClientRect();
+  const spacing = rect.width / (GRID_SIZE + 1);
+  const tolerance = spacing * 0.38;
+  for (let i = 0; i < NODES; i++) {
+    const p = NODE_POSITIONS[i];
+    const cx = rect.left + spacing * (p.col + 1);
+    const cy = rect.top + spacing * (p.row + 1);
+    const dist = Math.sqrt((clientX - cx) ** 2 + (clientY - cy) ** 2);
+    if (dist < tolerance) return i;
+  }
+  return -1;
+}
+
+gridContainer.addEventListener('mousedown', (e) => {
+  if (state !== 'input') return;
+  isDragging = true;
+  const node = getNodeFromPoint(e.clientX, e.clientY);
+  if (node >= 0 && userPattern.length === 0) handleNodeClick(node);
+});
+gridContainer.addEventListener('mousemove', (e) => {
+  if (!isDragging || state !== 'input') return;
+  const node = getNodeFromPoint(e.clientX, e.clientY);
+  if (node >= 0) {
+    const nextIndex = userPattern.length;
+    if (nextIndex < pattern.length && pattern[nextIndex] === node) {
+      handleNodeClick(node);
+    }
+  }
+});
+gridContainer.addEventListener('mouseup', () => isDragging = false);
+gridContainer.addEventListener('mouseleave', () => isDragging = false);
+
+gridContainer.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (state !== 'input') return;
+  isDragging = true;
+  const t = e.touches[0];
+  const node = getNodeFromPoint(t.clientX, t.clientY);
+  if (node >= 0 && userPattern.length === 0) handleNodeClick(node);
+}, { passive: false });
+gridContainer.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!isDragging || state !== 'input') return;
+  const t = e.touches[0];
+  const node = getNodeFromPoint(t.clientX, t.clientY);
+  if (node >= 0) {
+    const nextIndex = userPattern.length;
+    if (nextIndex < pattern.length && pattern[nextIndex] === node) {
+      handleNodeClick(node);
+    }
+  }
+}, { passive: false });
+gridContainer.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  isDragging = false;
+}, { passive: false });
+
+// ─── BUTTON HANDLERS ───
+$('btn-start').addEventListener('click', startGame);
+btnRetry.addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  stopMusic();
+  score = 0; combo = 0; lives = MAX_LIVES; isNewRecord = false;
+  btnRetry.classList.add('invisible');
+  hideScoreModal();
+  startLevel(1);
+  updateLives();
+  playMusic();
+});
+btnRepeat.addEventListener('click', handleRepeat);
+$('btn-mute-sfx').addEventListener('click', () => { audio.init(); toggleSfx(); });
+$('btn-mute-music').addEventListener('click', () => { toggleMusic(); });
+$('btn-mute-sfx-splash').addEventListener('click', () => { audio.init(); toggleSfx(); });
+$('btn-mute-music-splash').addEventListener('click', () => { initMusic(); toggleMusic(); });
+
+// ─── INIT ───
+function init() {
+  sfxMuted = localStorage.getItem('ph-sfx-muted') === '1';
+  musicMuted = localStorage.getItem('ph-music-muted') === '1';
+  updateSfxButtons();
+  updateMusicButtons();
+  loadHighScore();
+  createGrid();
+  glitchText($('title-text'), 'PATTERN');
+  setTimeout(() => glitchText($('subtitle-text'), 'HACKER'), 200);
+}
+init();
+</script>
+</body>
+</html>
