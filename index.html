@@ -372,6 +372,44 @@
   }
 
   /* Mobile adjustments */
+  /* Splash links */
+  .splash-links {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;
+  }
+  .btn-link {
+    background: transparent; border: 1px solid #00ff8844; border-radius: 4px;
+    padding: 6px 14px; color: #00ff8888; font-size: 0.7rem; cursor: pointer;
+    font-family: 'Courier New', monospace; letter-spacing: 0.1em;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    transition: all 0.2s;
+  }
+  .btn-link:hover { filter: brightness(1.2); border-color: #00ff88; color: #00ff88; }
+  .btn-link.star { border-color: #ffcc0044; color: #ffcc00aa; }
+  .btn-link.star:hover { border-color: #ffcc00; color: #ffcc00; }
+
+  /* Games played counter */
+  .games-counter {
+    text-align: center; font-size: 0.65rem; color: #00ff8866;
+    letter-spacing: 0.1em; padding-bottom: 10px; margin-top: auto;
+  }
+  .games-counter-number { display: inline; }
+
+  /* Confirm exit overlay */
+  .confirm-overlay {
+    display: none;
+    position: absolute; inset: 0; z-index: 95;
+    background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+    animation: overlayIn 0.2s ease-out;
+  }
+  .confirm-overlay.active { display: flex; }
+  .confirm-text {
+    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.2em;
+    color: #00ff88; text-shadow: 0 0 15px #00ff8866; text-align: center;
+  }
+  .confirm-buttons { display: flex; gap: 12px; }
+
   @media (max-height: 600px) {
     .grid-container { width: min(82vw, 66vh, 370px); height: min(82vw, 66vh, 370px); }
     .hud { padding: 8px 16px 2px; }
@@ -413,6 +451,13 @@
     <div style="display:flex;gap:10px;align-items:center">
       <button class="btn-small" id="btn-mute-sfx-splash">SFX ON</button>
       <button class="btn-small" id="btn-mute-music-splash">MUSIC ON</button>
+    </div>
+    <div class="splash-links">
+      <a class="btn-link" href="https://github.com/roundyyy/Pattern_Hacker" target="_blank" rel="noopener">&#x1F4BB; SOURCE CODE</a>
+      <a class="btn-link star" href="https://github.com/roundyyy/Pattern_Hacker" target="_blank" rel="noopener">&#x2B50; STAR ON GITHUB</a>
+    </div>
+    <div class="games-counter">
+      TOTAL GAMES PLAYED: <span class="games-counter-number" id="games-counter-display"><script type="text/javascript" src="https://counter.websiteout.com/js/2/5/36/0"></script></span>
     </div>
   </div>
 
@@ -471,6 +516,7 @@
       <button class="btn-icon" id="btn-pause">&#x23F8;</button>
       <button class="btn-icon" id="btn-mute-sfx">SFX</button>
       <button class="btn-icon" id="btn-mute-music">MUS</button>
+      <button class="btn-icon" id="btn-exit" title="Exit to menu">&#x2302;</button>
     </div>
 
     <!-- Pause overlay -->
@@ -478,6 +524,15 @@
       <div class="pause-title">PAUSED</div>
       <div class="pause-sub">SYSTEM STANDBY</div>
       <button class="btn-main" id="btn-resume">RESUME</button>
+    </div>
+
+    <!-- Confirm exit overlay -->
+    <div class="confirm-overlay" id="confirm-exit-overlay">
+      <div class="confirm-text">EXIT TO MAIN MENU?</div>
+      <div class="confirm-buttons">
+        <button class="btn-small" id="btn-confirm-exit-yes" style="border-color:#ff335566;color:#ff3355aa">YES, EXIT</button>
+        <button class="btn-small" id="btn-confirm-exit-no">CANCEL</button>
+      </div>
     </div>
 
     <!-- Score overlay -->
@@ -1569,6 +1624,7 @@ function handleFail(idx) {
     state = 'gameover';
     if (!sfxMuted) audio.fail();
     haptic([100, 50, 150]);
+    hitGameCounter();
 
     statusText.innerHTML = '';
     glitchText(statusText, 'SYSTEM BREACH FAILED');
@@ -1840,6 +1896,66 @@ $('btn-mute-sfx').addEventListener('click', () => { audio.init(); toggleSfx(); }
 $('btn-mute-music').addEventListener('click', () => { toggleMusic(); });
 $('btn-mute-sfx-splash').addEventListener('click', () => { audio.init(); toggleSfx(); });
 $('btn-mute-music-splash').addEventListener('click', () => { initMusic(); toggleMusic(); });
+
+// ─── EXIT TO MAIN MENU ───
+const confirmExitOverlay = $('confirm-exit-overlay');
+
+$('btn-exit').addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  if (paused) return showConfirmExit();
+  doPause();
+  showConfirmExit();
+});
+
+function showConfirmExit() {
+  confirmExitOverlay.classList.add('active');
+}
+
+function hideConfirmExit() {
+  confirmExitOverlay.classList.remove('active');
+}
+
+$('btn-confirm-exit-yes').addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  hideConfirmExit();
+  clearTimeout(showTimer);
+  clearInterval(timerInterval);
+  stopMusic();
+  state = 'idle';
+  paused = false;
+  pauseOverlay.classList.remove('active');
+  score = 0; combo = 0; lives = MAX_LIVES; isNewRecord = false;
+  perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false; levelLinesOffset = 0;
+  statusText.parentElement.querySelectorAll('.new-record').forEach(el => el.remove());
+  recalcGrid(3);
+  hideScoreModal();
+  gameScreen.classList.remove('active');
+  splash.classList.remove('hidden');
+  updateSplashRecord();
+});
+
+$('btn-confirm-exit-no').addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  hideConfirmExit();
+});
+
+// ─── COUNTER HIT ───
+function hitGameCounter() {
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:absolute;width:0;height:0;border:none;opacity:0;pointer-events:none;';
+  iframe.srcdoc = '<scr' + 'ipt src="https://counter.websiteout.com/js/2/5/36/0"><\/scr' + 'ipt>';
+  document.body.appendChild(iframe);
+  setTimeout(() => { try { iframe.remove(); } catch(e) {} }, 10000);
+}
+
+function updateSplashRecord() {
+  const badge = $('splash-record');
+  const val = $('splash-record-val');
+  if (highScore > 0) {
+    badge.classList.remove('invisible');
+    val.textContent = highScore.toLocaleString();
+  }
+}
 
 // ─── INIT ───
 function init() {
