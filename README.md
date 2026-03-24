@@ -8,7 +8,7 @@ A mobile-friendly memory game with a hacker aesthetic. Watch the lines drawn bet
 
 - Watch lines light up between nodes on a grid, then repeat the pattern by dragging through them
 - Each level adds one more line to memorize
-- The grid starts at 3x3 and expands up to 6x6 as you progress
+- The grid starts at 2x2 and expands up to 6x6 as you progress
 - You have limited lives, a countdown timer, and one "Show Again" per level
 - Build combos by clearing consecutive levels without mistakes
 - Earn Decrypt charges from perfect clears to auto-fill the first few nodes
