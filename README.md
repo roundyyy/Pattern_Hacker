@@ -6,9 +6,7 @@ A mobile memory game with a hacker aesthetic. Watch the pattern, repeat it, and 
 
 ## How to play
 
-- A sequence of tiles lights up, memorize it
-- Tap the tiles in the same order
-- Each round adds one more step
-- Miss once and it's game over.
+- Repeat the pattern correctly
+- Survive
 
 Designed for mobile, playable in any browser.
