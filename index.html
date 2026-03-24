@@ -56,6 +56,7 @@
   }
   .instructions {
     text-align: center; font-size: clamp(0.75rem, 2.5vw, 0.9rem); line-height: 1.8; color: #00ff8888; max-width: 300;
+    min-height: 5.4em;
   }
   .record-badge {
     padding: 6px 18px; border: 1px solid #ffcc0066; border-radius: 4px;
@@ -371,6 +372,25 @@
     100% { transform: scale(1); }
   }
 
+  /* Difficulty toggle */
+  .difficulty-toggle {
+    display: flex; align-items: center; gap: 0; border-radius: 4px; overflow: hidden;
+    border: 1px solid #00ff8844;
+  }
+  .diff-btn {
+    background: transparent; border: none; padding: 8px 18px; cursor: pointer;
+    font-family: 'Courier New', monospace; font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.15em; color: #00ff8866; transition: all 0.2s;
+  }
+  .diff-btn.active {
+    background: #00ff8822; color: #00ff88; text-shadow: 0 0 8px #00ff8844;
+  }
+  .diff-btn:hover:not(.active) { color: #00ff88aa; background: #00ff8808; }
+  .diff-btn.easy.active { background: #00ddff22; color: #00ddff; text-shadow: 0 0 8px #00ddff44; border-color: #00ddff44; }
+  .difficulty-label {
+    font-size: 0.55rem; color: #00ff8866; letter-spacing: 0.2em; text-align: center;
+  }
+
   /* Mobile adjustments */
   /* Splash links */
   .splash-links {
@@ -386,6 +406,175 @@
   .btn-link:hover { filter: brightness(1.2); border-color: #00ff88; color: #00ff88; }
   .btn-link.star { border-color: #ffcc0044; color: #ffcc00aa; }
   .btn-link.star:hover { border-color: #ffcc00; color: #ffcc00; }
+  .btn-link.lb { border-color: #00ddff44; color: #00ddffaa; }
+  .btn-link.lb:hover { border-color: #00ddff; color: #00ddff; }
+
+  /* Leaderboard overlay */
+  .lb-overlay {
+    display: none;
+    position: absolute; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.75);
+    align-items: center; justify-content: center;
+    animation: overlayIn 0.3s ease-out;
+  }
+  .lb-overlay.active { display: flex; }
+  .lb-panel {
+    background: linear-gradient(170deg, #0a1a10 0%, #0d2218 50%, #081510 100%);
+    border: 1px solid #00ddff44;
+    border-radius: 8px;
+    padding: 20px 20px 16px;
+    width: 88%; max-width: 320px;
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+    box-shadow: 0 0 40px #00ddff22, 0 0 80px #00ddff11, inset 0 0 30px #00ddff08;
+    animation: panelIn 0.4s ease-out;
+    position: relative; overflow: hidden;
+    max-height: 85vh;
+  }
+  .lb-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,221,255,0.02) 2px, rgba(0,221,255,0.02) 4px);
+    pointer-events: none;
+  }
+  .lb-title {
+    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.3em;
+    color: #00ddff; text-shadow: 0 0 15px #00ddff66;
+    margin-bottom: 14px;
+  }
+  .lb-table { width: 100%; }
+  .lb-row {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; padding: 5px 0;
+    border-bottom: 1px solid #00ddff15;
+    opacity: 0; animation: rowSlideIn 0.3s ease-out forwards;
+  }
+  .lb-row:last-of-type { border-bottom: none; }
+  .lb-rank {
+    font-size: 0.65rem; color: #00ddff66; letter-spacing: 0.1em; width: 28px; text-align: center; flex-shrink: 0;
+  }
+  .lb-rank.gold { color: #ffcc00; text-shadow: 0 0 6px #ffcc0044; }
+  .lb-rank.silver { color: #cccccc; text-shadow: 0 0 6px #cccccc44; }
+  .lb-rank.bronze { color: #cc8844; text-shadow: 0 0 6px #cc884444; }
+  .lb-name {
+    font-size: 0.75rem; color: #00ff88; letter-spacing: 0.1em; flex: 1; text-align: left; padding: 0 8px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .lb-score {
+    font-size: 0.8rem; font-weight: 700; color: #00ddff; letter-spacing: 0.05em;
+    text-shadow: 0 0 8px #00ddff44; flex-shrink: 0;
+  }
+  .lb-empty {
+    font-size: 0.75rem; color: #00ff8866; letter-spacing: 0.1em; padding: 20px 0; text-align: center;
+  }
+  .lb-loading {
+    font-size: 0.75rem; color: #00ddff88; letter-spacing: 0.15em; padding: 20px 0;
+    animation: pulse 1s ease-in-out infinite;
+  }
+  .lb-close {
+    margin-top: 14px;
+    background: transparent; border: 1px solid #00ddff66; border-radius: 4px;
+    padding: 10px 32px; cursor: pointer; color: #00ddff;
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em;
+    font-family: 'Courier New', monospace; text-shadow: 0 0 8px #00ddff44;
+    transition: all 0.2s;
+  }
+  .lb-close:hover { border-color: #00ddff; filter: brightness(1.3); }
+  .lb-close:active { transform: scale(0.96); }
+
+  /* Name entry overlay */
+  .name-overlay {
+    display: none;
+    position: absolute; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    animation: overlayIn 0.3s ease-out;
+  }
+  .name-overlay.active { display: flex; }
+  .name-panel {
+    background: linear-gradient(170deg, #0a1a10 0%, #0d2218 50%, #081510 100%);
+    border: 1px solid #00ff8844;
+    border-radius: 8px;
+    padding: 18px 16px 14px;
+    width: 92%; max-width: 340px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    box-shadow: 0 0 40px #00ff8822, inset 0 0 30px #00ff8808;
+    animation: panelIn 0.4s ease-out;
+    position: relative; overflow: hidden;
+  }
+  .name-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.02) 2px, rgba(0,255,136,0.02) 4px);
+    pointer-events: none;
+  }
+  .name-title {
+    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.25em;
+    color: #00ff88; text-shadow: 0 0 15px #00ff8866;
+  }
+  .name-score-display {
+    font-size: 0.75rem; color: #ffcc00; letter-spacing: 0.15em; text-shadow: 0 0 8px #ffcc0044;
+  }
+  .name-input-display {
+    width: 100%; height: 38px;
+    background: #050d0888; border: 1px solid #00ff8844; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; font-weight: 700; letter-spacing: 0.3em;
+    color: #00ff88; text-shadow: 0 0 10px #00ff8866;
+    font-family: 'Courier New', monospace;
+    position: relative; overflow: hidden;
+  }
+  .name-cursor {
+    display: inline-block; width: 2px; height: 1.1em;
+    background: #00ff88; animation: pulse 0.8s ease-in-out infinite;
+    margin-left: 2px; vertical-align: middle;
+  }
+  .name-kb {
+    display: flex; flex-direction: column; gap: 5px; width: 100%; align-items: center;
+  }
+  .name-kb-row {
+    display: flex; gap: 4px; justify-content: center; flex-wrap: nowrap;
+  }
+  .name-kb-key {
+    background: #0a1a1088; border: 1px solid #00ff8833; border-radius: 3px;
+    min-width: 26px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    color: #00ff88; font-size: 0.75rem; font-weight: 700;
+    font-family: 'Courier New', monospace; letter-spacing: 0;
+    cursor: pointer; transition: all 0.1s; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .name-kb-key:hover { border-color: #00ff88; background: #00ff8815; }
+  .name-kb-key:active { transform: scale(0.92); background: #00ff8825; }
+  .name-kb-key.wide { min-width: 50px; font-size: 0.6rem; letter-spacing: 0.05em; }
+  .name-kb-key.del { border-color: #ff335544; color: #ff3355aa; }
+  .name-kb-key.del:hover { border-color: #ff3355; background: #ff335515; }
+  .name-actions {
+    display: flex; gap: 10px; width: 100%; justify-content: center;
+  }
+  .name-btn-submit {
+    background: transparent; border: 1px solid #00ff8866; border-radius: 4px;
+    padding: 10px 24px; cursor: pointer; color: #00ff88;
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em;
+    font-family: 'Courier New', monospace; text-shadow: 0 0 8px #00ff8844;
+    transition: all 0.2s;
+  }
+  .name-btn-submit:hover { border-color: #00ff88; filter: brightness(1.3); }
+  .name-btn-submit:active { transform: scale(0.96); }
+  .name-btn-submit:disabled { opacity: 0.3; cursor: not-allowed; }
+  .name-btn-skip {
+    background: transparent; border: 1px solid #00ff8833; border-radius: 4px;
+    padding: 10px 24px; cursor: pointer; color: #00ff8866;
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em;
+    font-family: 'Courier New', monospace;
+    transition: all 0.2s;
+  }
+  .name-btn-skip:hover { border-color: #00ff8866; color: #00ff88aa; }
+  .name-btn-skip:active { transform: scale(0.96); }
+  .name-upload-status {
+    font-size: 0.7rem; letter-spacing: 0.15em; height: 16px;
+    text-align: center;
+  }
 
   /* Games played counter */
   .games-counter {
@@ -393,22 +582,6 @@
     letter-spacing: 0.1em; padding-bottom: 10px; margin-top: auto;
   }
   .games-counter-number { display: inline; }
-
-  /* Confirm exit overlay */
-  .confirm-overlay {
-    display: none;
-    position: absolute; inset: 0; z-index: 95;
-    background: rgba(0,0,0,0.85);
-    align-items: center; justify-content: center;
-    flex-direction: column; gap: 16px;
-    animation: overlayIn 0.2s ease-out;
-  }
-  .confirm-overlay.active { display: flex; }
-  .confirm-text {
-    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.2em;
-    color: #00ff88; text-shadow: 0 0 15px #00ff8866; text-align: center;
-  }
-  .confirm-buttons { display: flex; gap: 12px; }
 
   @media (max-height: 600px) {
     .grid-container { width: min(82vw, 66vh, 370px); height: min(82vw, 66vh, 370px); }
@@ -441,19 +614,26 @@
       <div class="title" id="title-text">PATTERN</div>
       <div class="subtitle" id="subtitle-text">HACKER</div>
     </div>
-    <p class="instructions">
+    <p class="instructions" id="instructions-text">
       Watch the lines. Repeat the pattern.<br>
       Each level adds one more line.<br>
       You have 3 lives. Be fast for bonus points!
     </p>
     <div class="record-badge invisible" id="splash-record">BEST: <span id="splash-record-val">0</span></div>
-    <button class="btn-main" id="btn-start">JACK IN</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div class="difficulty-label">DIFFICULTY</div>
+      <div class="difficulty-toggle" id="difficulty-toggle">
+        <button class="diff-btn easy" id="diff-easy" data-diff="easy">EASY</button>
+        <button class="diff-btn active" id="diff-normal" data-diff="normal">NORMAL</button>
+      </div>
+    </div>
+    <button class="btn-main" id="btn-start">START</button>
     <div style="display:flex;gap:10px;align-items:center">
       <button class="btn-small" id="btn-mute-sfx-splash">SFX ON</button>
       <button class="btn-small" id="btn-mute-music-splash">MUSIC ON</button>
     </div>
     <div class="splash-links">
-      <a class="btn-link" href="https://github.com/roundyyy/Pattern_Hacker" target="_blank" rel="noopener">&#x1F4BB; SOURCE CODE</a>
+      <button class="btn-link lb" id="btn-leaderboard">&#x1F3C6; LEADERBOARD</button>
       <a class="btn-link star" href="https://github.com/roundyyy/Pattern_Hacker" target="_blank" rel="noopener">&#x2B50; STAR ON GITHUB</a>
     </div>
     <div class="games-counter">
@@ -483,6 +663,7 @@
     </div>
 
     <div class="lives" id="lives-display"></div>
+    <div id="mode-badge" style="font-size:0.55rem;letter-spacing:0.2em;color:#00ddff88;height:14px;text-align:center;z-index:2"></div>
 
     <div class="info-bar">
       <div class="combo-badge invisible" id="combo-badge">x1 COMBO</div>
@@ -516,7 +697,6 @@
       <button class="btn-icon" id="btn-pause">&#x23F8;</button>
       <button class="btn-icon" id="btn-mute-sfx">SFX</button>
       <button class="btn-icon" id="btn-mute-music">MUS</button>
-      <button class="btn-icon" id="btn-exit" title="Exit to menu">&#x2302;</button>
     </div>
 
     <!-- Pause overlay -->
@@ -524,33 +704,81 @@
       <div class="pause-title">PAUSED</div>
       <div class="pause-sub">SYSTEM STANDBY</div>
       <button class="btn-main" id="btn-resume">RESUME</button>
-    </div>
-
-    <!-- Confirm exit overlay -->
-    <div class="confirm-overlay" id="confirm-exit-overlay">
-      <div class="confirm-text">EXIT TO MAIN MENU?</div>
-      <div class="confirm-buttons">
-        <button class="btn-small" id="btn-confirm-exit-yes" style="border-color:#ff335566;color:#ff3355aa">YES, EXIT</button>
-        <button class="btn-small" id="btn-confirm-exit-no">CANCEL</button>
-      </div>
+      <button class="btn-small" id="btn-exit-menu" style="border-color:#ff335544;color:#ff3355aa;margin-top:4px">EXIT TO MENU</button>
     </div>
 
     <!-- Score overlay -->
     <div class="score-overlay" id="score-overlay">
       <div class="score-panel" id="score-panel"></div>
     </div>
+
+    <!-- Name entry overlay (game over) -->
+    <div class="name-overlay" id="name-overlay">
+      <div class="name-panel">
+        <div class="name-title">ENTER YOUR INITIALS</div>
+        <div class="name-score-display" id="name-score-display">SCORE: 0</div>
+        <div class="name-input-display" id="name-input-display"><span id="name-input-text"></span><span class="name-cursor"></span></div>
+        <div class="name-kb" id="name-kb"></div>
+        <div class="name-upload-status" id="name-upload-status"></div>
+        <div class="name-actions">
+          <button class="name-btn-submit" id="name-btn-submit">SUBMIT</button>
+          <button class="name-btn-skip" id="name-btn-skip">SKIP</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard overlay (splash screen level, outside game-screen) -->
+  <div class="lb-overlay" id="lb-overlay">
+    <div class="lb-panel" id="lb-panel">
+      <div class="lb-title">// LEADERBOARD</div>
+      <div class="lb-table" id="lb-table"></div>
+      <button class="lb-close" id="lb-close">CLOSE</button>
+    </div>
   </div>
 </div>
 
 <script>
 // ─── CONFIG ───
-const MAX_GRID_SIZE = 6;
-const SHOW_DELAY_BASE = 700;
-const SHOW_DELAY_MIN = 350;
-const SHOW_DELAY_DECAY = 25;
-const MAX_LIVES = 3;
-const BASE_TIME_LIMIT = 12;
-const TIME_PER_NODE = 2.5;
+let difficulty = 'normal'; // 'easy' or 'normal'
+
+const CONFIG = {
+  normal: {
+    MAX_GRID_SIZE: 6,
+    SHOW_DELAY_BASE: 700,
+    SHOW_DELAY_MIN: 350,
+    SHOW_DELAY_DECAY: 25,
+    MAX_LIVES: 3,
+    BASE_TIME_LIMIT: 12,
+    TIME_PER_NODE: 2.5,
+    TIME_DECAY_PER_LEVEL: 0.3,
+    FAR_CHANCE_BASE: 0.2,
+    FAR_CHANCE_PER_LEVEL: 0.06,
+    FAR_CHANCE_MAX: 0.7,
+    PREFER_STRAIGHT: false,
+    EXTRA_LINES: 1,
+    MAX_REPEATS: 1,
+  },
+  easy: {
+    MAX_GRID_SIZE: 6,
+    SHOW_DELAY_BASE: 900,
+    SHOW_DELAY_MIN: 500,
+    SHOW_DELAY_DECAY: 15,
+    MAX_LIVES: 5,
+    BASE_TIME_LIMIT: 15,
+    TIME_PER_NODE: 3,
+    TIME_DECAY_PER_LEVEL: 0.15,
+    FAR_CHANCE_BASE: 0.05,
+    FAR_CHANCE_PER_LEVEL: 0.02,
+    FAR_CHANCE_MAX: 0.25,
+    PREFER_STRAIGHT: true,
+    EXTRA_LINES: 0,
+    MAX_REPEATS: 2,
+  }
+};
+
+function cfg() { return CONFIG[difficulty]; }
+
 const PERFECT_TIME_RATIO = 0.4;
 const DECRYPT_EVERY_N_PERFECT = 3;
 const DECRYPT_HINT_NODES = 3;
@@ -587,12 +815,13 @@ let activeNode = -1;
 let failNode = -1;
 let score = 0;
 let combo = 0;
-let lives = MAX_LIVES;
+let lives = 3;
 let highScore = 0;
 let isNewRecord = false;
 let sfxMuted = false;
 let musicMuted = false;
 let repeatUsed = false;
+let repeatCount = 0;
 let timerInterval = null;
 let timeRemaining = 0;
 let timeLimitForLevel = 0;
@@ -740,15 +969,15 @@ function updateSfxButtons() {
 }
 
 // ─── HIGH SCORE ───
+function highScoreKey() {
+  return difficulty === 'easy' ? 'ph-highscore-easy' : 'ph-highscore';
+}
 function loadHighScore() {
-  try { highScore = parseInt(localStorage.getItem('ph-highscore') || '0', 10) || 0; } catch {}
-  if (highScore > 0) {
-    document.getElementById('splash-record').classList.remove('invisible');
-    document.getElementById('splash-record-val').textContent = highScore.toLocaleString();
-  }
+  try { highScore = parseInt(localStorage.getItem(highScoreKey()) || '0', 10) || 0; } catch {}
+  updateSplashRecord();
 }
 function saveHighScore(val) {
-  try { localStorage.setItem('ph-highscore', String(val)); } catch {}
+  try { localStorage.setItem(highScoreKey(), String(val)); } catch {}
 }
 
 // ─── SEGMENT OVERLAP DETECTION ───
@@ -792,21 +1021,34 @@ function generatePattern(numLines) {
     let pool = unused.length > 0 ? unused : usedNodes;
     if (pool.length === 0) break;
 
-    const farChance = Math.min(0.7, 0.2 + (level - 1) * 0.06);
+    const fc = cfg();
+    const farChance = Math.min(fc.FAR_CHANCE_MAX, fc.FAR_CHANCE_BASE + (level - 1) * fc.FAR_CHANCE_PER_LEVEL);
     const adjacent = [];
+    const straight = []; // horizontal or vertical adjacent
     const far = [];
     for (const i of pool) {
       const p = nodePositions[i];
-      const isAdj = Math.abs(p.row - lp.row) <= 1 && Math.abs(p.col - lp.col) <= 1;
-      if (isAdj) adjacent.push(i);
-      else far.push(i);
+      const dr = Math.abs(p.row - lp.row);
+      const dc = Math.abs(p.col - lp.col);
+      const isAdj = dr <= 1 && dc <= 1;
+      if (isAdj) {
+        adjacent.push(i);
+        if (dr === 0 || dc === 0) straight.push(i);
+      } else {
+        far.push(i);
+      }
     }
 
     let chosen;
     if (far.length > 0 && (adjacent.length === 0 || Math.random() < farChance)) {
       chosen = far[Math.floor(Math.random() * far.length)];
     } else if (adjacent.length > 0) {
-      chosen = adjacent[Math.floor(Math.random() * adjacent.length)];
+      // In easy mode, prefer horizontal/vertical moves over diagonal
+      if (fc.PREFER_STRAIGHT && straight.length > 0 && Math.random() < 0.75) {
+        chosen = straight[Math.floor(Math.random() * straight.length)];
+      } else {
+        chosen = adjacent[Math.floor(Math.random() * adjacent.length)];
+      }
     } else {
       chosen = pool[Math.floor(Math.random() * pool.length)];
     }
@@ -819,7 +1061,7 @@ function generatePattern(numLines) {
 
 // ─── GRID EXPANSION CHECK ───
 function checkGridExpansion() {
-  if (gridSize >= MAX_GRID_SIZE) return false;
+  if (gridSize >= cfg().MAX_GRID_SIZE) return false;
   const uniqueNodes = new Set(pattern);
   if (uniqueNodes.size >= nodes) {
     levelLinesOffset = level; // reset line count so next level starts with 2 lines
@@ -1016,7 +1258,7 @@ let ghostLineSegments = [];
 
 function updateLives() {
   let html = '';
-  const maxDisplay = Math.max(MAX_LIVES, lives);
+  const maxDisplay = Math.max(cfg().MAX_LIVES, lives);
   for (let i = 0; i < maxDisplay; i++) {
     html += `<span class="life ${i >= lives ? 'lost' : ''}">&#x1F49A;</span>`;
   }
@@ -1030,6 +1272,7 @@ function updateHud() {
   updateGridHud();
   const colors = { showing: '#00ddff', success: '#00ff88', fail: '#ff3355', gameover: '#ff3355' };
   hudLevel.style.color = colors[state] || '#00ff88';
+  $('mode-badge').textContent = difficulty === 'easy' ? 'EASY MODE' : '';
 }
 
 function updateProgressDots() {
@@ -1109,8 +1352,9 @@ function triggerComboFlash(tier) {
 
 // ─── TIMER ───
 function getTimeLimitForLevel(lvl) {
+  const c = cfg();
   const numLines = lvl + 1;
-  return Math.max(5, BASE_TIME_LIMIT + (numLines - 2) * TIME_PER_NODE - (lvl - 1) * 0.3);
+  return Math.max(5, c.BASE_TIME_LIMIT + (numLines - 2) * c.TIME_PER_NODE - (lvl - 1) * c.TIME_DECAY_PER_LEVEL);
 }
 
 function startTimer() {
@@ -1287,7 +1531,8 @@ function showPatternSequence(pat, onComplete) {
   glitchText(statusText, 'DECRYPTING...');
   statusText.style.color = '#00ddff';
 
-  const showDelay = Math.max(SHOW_DELAY_MIN, SHOW_DELAY_BASE - (level - 1) * SHOW_DELAY_DECAY);
+  const c = cfg();
+  const showDelay = Math.max(c.SHOW_DELAY_MIN, c.SHOW_DELAY_BASE - (level - 1) * c.SHOW_DELAY_DECAY);
   let i = 0;
 
   showTimer = setTimeout(function step() {
@@ -1335,8 +1580,10 @@ function enterInputState() {
   startTimer();
   btnPause.disabled = false; btnPause.style.opacity = '1';
   if (!repeatUsed) {
+    const remaining = cfg().MAX_REPEATS - repeatCount;
     btnRepeat.classList.remove('invisible');
     btnRepeat.disabled = false;
+    btnRepeat.textContent = remaining > 1 ? `SHOW AGAIN (${remaining})` : 'SHOW AGAIN';
   } else {
     btnRepeat.classList.add('invisible');
   }
@@ -1391,12 +1638,13 @@ function startGame() {
   gameScreen.classList.add('active');
   score = 0;
   combo = 0;
-  lives = MAX_LIVES;
+  lives = cfg().MAX_LIVES;
   isNewRecord = false;
   perfectClears = 0;
   decryptCharges = 0;
   decryptUsedThisLevel = false;
   levelLinesOffset = 0;
+  loadHighScore();
   recalcGrid(3);
   createGrid();
   updateLives();
@@ -1408,8 +1656,9 @@ function startLevel(lvl) {
   clearTimeout(showTimer);
   level = lvl;
   repeatUsed = false;
+  repeatCount = 0;
   decryptUsedThisLevel = false;
-  const numLines = (lvl - levelLinesOffset) + 1;
+  const numLines = (lvl - levelLinesOffset) + cfg().EXTRA_LINES;
   const pat = generatePattern(numLines);
   pattern = pat;
   updateHud();
@@ -1479,7 +1728,7 @@ function handleNodeClick(idx) {
 
     // Extra life every 3 levels
     let earnedExtraLife = false;
-    if (level % 3 === 0 && lives < MAX_LIVES + 3) {
+    if (level % 3 === 0 && lives < cfg().MAX_LIVES + 3) {
       lives++;
       earnedExtraLife = true;
       updateLives();
@@ -1647,8 +1896,14 @@ function handleFail(idx) {
     }, 300);
 
     updateHud();
-    btnRetry.classList.remove('invisible');
-    btnRetry.textContent = 'RETRY';
+    if (difficulty === 'easy') {
+      setTimeout(() => {
+        btnRetry.classList.remove('invisible');
+        btnRetry.textContent = 'RETRY';
+      }, 1200);
+    } else {
+      setTimeout(() => showNameEntry(score), 1200);
+    }
   } else {
     state = 'fail';
     if (!sfxMuted) audio.lifeLost();
@@ -1669,6 +1924,7 @@ function handleFail(idx) {
           resetAllNodes();
           renderSvg();
           repeatUsed = false;
+          repeatCount = 0;
           showPatternSequence(pattern, enterInputState);
         });
       }, 1500);
@@ -1678,6 +1934,7 @@ function handleFail(idx) {
         resetAllNodes();
         renderSvg();
         repeatUsed = false;
+        repeatCount = 0;
         showPatternSequence(pattern, enterInputState);
       }, 2000);
     }
@@ -1687,7 +1944,8 @@ function handleFail(idx) {
 // ─── REPEAT PATTERN ───
 function handleRepeat() {
   if (state !== 'input' || repeatUsed || paused) return;
-  repeatUsed = true;
+  repeatCount++;
+  if (repeatCount >= cfg().MAX_REPEATS) repeatUsed = true;
   stopTimer();
   btnRepeat.classList.add('invisible');
   btnDecrypt.classList.add('invisible');
@@ -1874,7 +2132,7 @@ btnRetry.addEventListener('click', () => {
   clearTimeout(showTimer);
   if (!sfxMuted) audio.click();
   stopMusic();
-  score = 0; combo = 0; lives = MAX_LIVES; isNewRecord = false;
+  score = 0; combo = 0; lives = cfg().MAX_LIVES; isNewRecord = false;
   perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false; levelLinesOffset = 0;
   paused = false;
   pauseOverlay.classList.remove('active');
@@ -1883,6 +2141,7 @@ btnRetry.addEventListener('click', () => {
   recalcGrid(3);
   createGrid();
   btnRetry.classList.add('invisible');
+  nameOverlay.classList.remove('active');
   hideScoreModal();
   startLevel(1);
   updateLives();
@@ -1898,45 +2157,23 @@ $('btn-mute-sfx-splash').addEventListener('click', () => { audio.init(); toggleS
 $('btn-mute-music-splash').addEventListener('click', () => { initMusic(); toggleMusic(); });
 
 // ─── EXIT TO MAIN MENU ───
-const confirmExitOverlay = $('confirm-exit-overlay');
-
-$('btn-exit').addEventListener('click', () => {
+$('btn-exit-menu').addEventListener('click', () => {
   if (!sfxMuted) audio.click();
-  if (paused) return showConfirmExit();
-  doPause();
-  showConfirmExit();
-});
-
-function showConfirmExit() {
-  confirmExitOverlay.classList.add('active');
-}
-
-function hideConfirmExit() {
-  confirmExitOverlay.classList.remove('active');
-}
-
-$('btn-confirm-exit-yes').addEventListener('click', () => {
-  if (!sfxMuted) audio.click();
-  hideConfirmExit();
   clearTimeout(showTimer);
   clearInterval(timerInterval);
   stopMusic();
   state = 'idle';
   paused = false;
   pauseOverlay.classList.remove('active');
-  score = 0; combo = 0; lives = MAX_LIVES; isNewRecord = false;
+  score = 0; combo = 0; lives = cfg().MAX_LIVES; isNewRecord = false;
   perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false; levelLinesOffset = 0;
   statusText.parentElement.querySelectorAll('.new-record').forEach(el => el.remove());
   recalcGrid(3);
+  nameOverlay.classList.remove('active');
   hideScoreModal();
   gameScreen.classList.remove('active');
   splash.classList.remove('hidden');
   updateSplashRecord();
-});
-
-$('btn-confirm-exit-no').addEventListener('click', () => {
-  if (!sfxMuted) audio.click();
-  hideConfirmExit();
 });
 
 // ─── COUNTER HIT ───
@@ -1954,16 +2191,250 @@ function updateSplashRecord() {
   if (highScore > 0) {
     badge.classList.remove('invisible');
     val.textContent = highScore.toLocaleString();
+  } else {
+    badge.classList.add('invisible');
   }
 }
+
+// ─── LEADERBOARD ───
+const LB_GAME_ID = 39;
+const LB_API = 'https://geraldburke.com/apis/simple-leaderboard-api/';
+
+async function fetchTopScores(count = 10) {
+  const url = `${LB_API}?action=topScores&gameID=${LB_GAME_ID}&count=${count}`;
+  const resp = await fetch(url);
+  return resp.json();
+}
+
+async function submitScore(userName, scoreVal) {
+  const url = `${LB_API}?action=newScore&gameID=${LB_GAME_ID}&score=${scoreVal}&userName=${encodeURIComponent(userName)}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.text();
+}
+
+// ─── LEADERBOARD POPUP (SPLASH) ───
+const lbOverlay = $('lb-overlay');
+const lbTable = $('lb-table');
+
+function showLeaderboard() {
+  lbTable.innerHTML = '<div class="lb-loading">LOADING...</div>';
+  lbOverlay.classList.add('active');
+  fetchTopScores(10).then(data => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      lbTable.innerHTML = '<div class="lb-empty">NO SCORES YET</div>';
+      return;
+    }
+    let html = '';
+    data.forEach((entry, i) => {
+      const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      const delay = (i + 1) * 80;
+      html += `<div class="lb-row" style="animation-delay:${delay}ms">
+        <span class="lb-rank ${rankClass}">#${i + 1}</span>
+        <span class="lb-name">${escapeHtml(entry.userName || entry.username || '???')}</span>
+        <span class="lb-score">${Number(entry.score).toLocaleString()}</span>
+      </div>`;
+    });
+    lbTable.innerHTML = html;
+  }).catch(() => {
+    lbTable.innerHTML = '<div class="lb-empty">CONNECT FAILED</div>';
+  });
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+$('btn-leaderboard').addEventListener('click', () => {
+  if (!sfxMuted) { audio.init(); audio.click(); }
+  showLeaderboard();
+});
+$('lb-close').addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  lbOverlay.classList.remove('active');
+});
+lbOverlay.addEventListener('click', (e) => {
+  if (e.target === lbOverlay) lbOverlay.classList.remove('active');
+});
+
+// ─── NAME ENTRY (GAME OVER) ───
+const nameOverlay = $('name-overlay');
+const nameInputText = $('name-input-text');
+const nameScoreDisplay = $('name-score-display');
+const nameUploadStatus = $('name-upload-status');
+const nameBtnSubmit = $('name-btn-submit');
+const nameBtnSkip = $('name-btn-skip');
+const nameKb = $('name-kb');
+
+let nameValue = '';
+const NAME_MAX = 10;
+
+function buildKeyboard() {
+  const rows = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+  let html = '';
+  rows.forEach(row => {
+    html += '<div class="name-kb-row">';
+    for (const ch of row) {
+      html += `<div class="name-kb-key" data-key="${ch}">${ch}</div>`;
+    }
+    html += '</div>';
+  });
+  html += '<div class="name-kb-row">';
+  html += '<div class="name-kb-key wide" data-key="NUM">0-9</div>';
+  html += '<div class="name-kb-key" data-key=" ">_</div>';
+  html += '<div class="name-kb-key wide del" data-key="DEL">DEL</div>';
+  html += '</div>';
+  nameKb.innerHTML = html;
+}
+
+let numMode = false;
+function handleKeyPress(key) {
+  if (!sfxMuted) audio.click();
+  if (key === 'DEL') {
+    nameValue = nameValue.slice(0, -1);
+  } else if (key === 'NUM') {
+    // Toggle number row
+    numMode = !numMode;
+    renderKeyboard();
+  } else if (nameValue.length < NAME_MAX) {
+    nameValue += key;
+  }
+  updateNameDisplay();
+}
+
+function renderKeyboard() {
+  if (numMode) {
+    const rows = ['1234567890'];
+    let html = '';
+    rows.forEach(row => {
+      html += '<div class="name-kb-row">';
+      for (const ch of row) {
+        html += `<div class="name-kb-key" data-key="${ch}">${ch}</div>`;
+      }
+      html += '</div>';
+    });
+    html += '<div class="name-kb-row">';
+    html += '<div class="name-kb-key wide" data-key="NUM">A-Z</div>';
+    html += '<div class="name-kb-key" data-key=" ">_</div>';
+    html += '<div class="name-kb-key wide del" data-key="DEL">DEL</div>';
+    html += '</div>';
+    nameKb.innerHTML = html;
+  } else {
+    buildKeyboard();
+  }
+}
+
+function updateNameDisplay() {
+  nameInputText.textContent = nameValue;
+  nameBtnSubmit.disabled = nameValue.trim().length === 0;
+}
+
+let kbTouchFired = false;
+nameKb.addEventListener('touchend', (e) => {
+  const key = e.target.closest('.name-kb-key');
+  if (key) {
+    e.preventDefault();
+    kbTouchFired = true;
+    handleKeyPress(key.dataset.key);
+  }
+});
+nameKb.addEventListener('click', (e) => {
+  if (kbTouchFired) { kbTouchFired = false; return; }
+  const key = e.target.closest('.name-kb-key');
+  if (key) handleKeyPress(key.dataset.key);
+});
+
+function showNameEntry(finalScore) {
+  nameValue = localStorage.getItem('ph-player-name') || '';
+  numMode = false;
+  nameScoreDisplay.textContent = `SCORE: ${finalScore.toLocaleString()}`;
+  nameUploadStatus.textContent = '';
+  nameUploadStatus.style.color = '';
+  nameBtnSubmit.disabled = nameValue.trim().length === 0;
+  nameBtnSubmit.textContent = 'SUBMIT';
+  nameBtnSkip.textContent = 'SKIP';
+  nameBtnSubmit.style.display = '';
+  nameBtnSkip.style.display = '';
+  buildKeyboard();
+  updateNameDisplay();
+  nameOverlay.classList.add('active');
+}
+
+function hideNameEntry() {
+  nameOverlay.classList.remove('active');
+  btnRetry.classList.remove('invisible');
+  btnRetry.textContent = 'RETRY';
+}
+
+nameBtnSubmit.addEventListener('click', async () => {
+  const name = nameValue.trim();
+  if (!name) return;
+  if (!sfxMuted) audio.click();
+  localStorage.setItem('ph-player-name', name);
+  nameBtnSubmit.disabled = true;
+  nameBtnSubmit.textContent = 'UPLOADING...';
+  nameUploadStatus.textContent = '';
+  try {
+    await submitScore(name, score);
+    nameUploadStatus.textContent = 'SCORE UPLOADED';
+    nameUploadStatus.style.color = '#00ff88';
+    if (!sfxMuted) audio.success();
+    nameBtnSubmit.style.display = 'none';
+    nameBtnSkip.textContent = 'CONTINUE';
+  } catch (e) {
+    nameUploadStatus.textContent = 'UPLOAD FAILED';
+    nameUploadStatus.style.color = '#ff3355';
+    nameBtnSubmit.disabled = false;
+    nameBtnSubmit.textContent = 'RETRY';
+  }
+});
+
+nameBtnSkip.addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  hideNameEntry();
+});
+
+// ─── DIFFICULTY TOGGLE ───
+function setDifficulty(diff) {
+  difficulty = diff;
+  localStorage.setItem('ph-difficulty', diff);
+  $('diff-easy').classList.toggle('active', diff === 'easy');
+  $('diff-normal').classList.toggle('active', diff === 'normal');
+  loadHighScore();
+  updateInstructions();
+}
+
+function updateInstructions() {
+  const el = $('instructions-text');
+  if (difficulty === 'easy') {
+    el.innerHTML = 'Watch the lines. Repeat the pattern.<br>Each level adds one more line.<br>You have 5 lives.';
+  } else {
+    el.innerHTML = 'Watch the lines. Repeat the pattern.<br>Each level adds one more line.<br>You have 3 lives. Be fast for bonus points!';
+  }
+}
+
+$('diff-easy').addEventListener('click', () => {
+  if (!sfxMuted) { audio.init(); audio.click(); }
+  setDifficulty('easy');
+});
+$('diff-normal').addEventListener('click', () => {
+  if (!sfxMuted) { audio.init(); audio.click(); }
+  setDifficulty('normal');
+});
 
 // ─── INIT ───
 function init() {
   sfxMuted = localStorage.getItem('ph-sfx-muted') === '1';
   musicMuted = localStorage.getItem('ph-music-muted') === '1';
+  difficulty = localStorage.getItem('ph-difficulty') || 'normal';
+  $('diff-easy').classList.toggle('active', difficulty === 'easy');
+  $('diff-normal').classList.toggle('active', difficulty === 'normal');
   updateSfxButtons();
   updateMusicButtons();
   loadHighScore();
+  updateInstructions();
   createGrid();
   glitchText($('title-text'), 'PATTERN');
   setTimeout(() => glitchText($('subtitle-text'), 'HACKER'), 200);
