@@ -38,6 +38,20 @@
     background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.015) 2px, rgba(0,255,136,0.015) 4px);
     pointer-events: none; z-index: 10;
   }
+  .grid-bg-pattern {
+    position: absolute; inset: 0;
+    pointer-events: none; z-index: 1;
+    opacity: 0;
+    transition: opacity 0.8s ease, background 0.8s ease;
+  }
+  .grid-bg-pattern.active { opacity: 1; }
+  .anon-mask-bg {
+    position: absolute; inset: 0;
+    pointer-events: none; z-index: 2;
+    background: url('anonymous.jpg') center center / contain no-repeat;
+    mix-blend-mode: screen;
+    opacity: 0.04;
+  }
 
   /* Splash */
   #splash {
@@ -70,7 +84,7 @@
     background: transparent; border: 2px solid #00ff88; border-radius: 6px;
     padding: 14px 40px; cursor: pointer; color: #00ff88;
     font-size: clamp(1rem, 3vw, 1.2rem); font-weight: 700; letter-spacing: 0.25em;
-    font-family: 'Courier New', monospace; text-shadow: 0 0 10px #00ff8866;
+    font-family: 'Courier New', 'Lucida Console', monospace; text-shadow: 0 0 10px #00ff8866;
     transition: all 0.2s;
   }
   .btn-main:hover { filter: brightness(1.2); }
@@ -78,7 +92,7 @@
   .btn-small {
     background: transparent; border: 1px solid #00ff8844; border-radius: 4px;
     padding: 8px 16px; color: #00ff8888; font-size: 0.75rem; cursor: pointer;
-    font-family: 'Courier New', monospace; letter-spacing: 0.1em;
+    font-family: 'Courier New', 'Lucida Console', monospace; letter-spacing: 0.1em;
   }
   .btn-icon {
     background: transparent; border: 1px solid #00ff8833; border-radius: 50%;
@@ -96,7 +110,7 @@
     display: flex; justify-content: space-between; width: 100%; max-width: 400px;
     padding: 12px 16px 4px; z-index: 2;
   }
-  .hud-cell { text-align: center; min-width: 50px; }
+  .hud-cell { text-align: center; flex: 1; }
   .hud-cell:first-child { text-align: left; }
   .hud-cell:last-child { text-align: right; }
   .hud-label { font-size: 0.55rem; letter-spacing: 0.2em; color: #00ff8866; margin-bottom: 2px; }
@@ -152,7 +166,7 @@
     position: absolute; bottom: 0;
   }
 
-  /* Grid - larger base to accommodate expansion */
+  /* Grid */
   .grid-container {
     position: relative;
     width: min(92vw, 80vh, 420px);
@@ -186,27 +200,61 @@
   /* Bottom bar */
   .bottom-bar {
     display: flex; align-items: center; justify-content: center;
-    gap: 8px; height: 56px; z-index: 2; flex-shrink: 0; flex-wrap: wrap;
+    gap: 0; height: 56px; z-index: 2; flex-shrink: 0; flex-wrap: nowrap;
+    width: 100%; max-width: 420px; padding: 0 6px;
+  }
+  .bottom-bar > * {
+    flex: 1 1 0; min-width: 0; margin: 0 3px;
+    text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .btn-repeat {
     background: transparent; border: 1px solid #00ddff55; border-radius: 4px;
-    padding: 6px 14px; color: #00ddffaa; font-size: 0.65rem; cursor: pointer;
-    font-family: 'Courier New', monospace; letter-spacing: 0.1em; transition: all 0.2s;
+    padding: 6px 4px; color: #00ddffaa; font-size: 0.6rem; cursor: pointer;
+    font-family: 'Courier New', 'Lucida Console', monospace; letter-spacing: 0.05em; transition: all 0.2s;
   }
-  .btn-repeat.invisible { visibility: hidden; pointer-events: none; }
-  .btn-repeat:hover { border-color: #00ddff; color: #00ddff; }
-  .btn-repeat:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-repeat.inactive { opacity: 0.25; pointer-events: none; }
+  .btn-repeat:hover:not(.inactive) { border-color: #00ddff; color: #00ddff; }
+  .btn-repeat:disabled { opacity: 0.2; cursor: not-allowed; }
   .btn-main.invisible { visibility: hidden; pointer-events: none; }
+  .retry-buttons { display: flex; gap: 8px; width: 100%; }
+  .retry-buttons.invisible { visibility: hidden; pointer-events: none; }
+  .retry-half { flex: 1; padding: 14px 0; min-width: 0; }
 
   /* Decrypt button */
   .btn-decrypt {
     background: transparent; border: 1px solid #ffcc0055; border-radius: 4px;
-    padding: 6px 14px; color: #ffcc00aa; font-size: 0.65rem; cursor: pointer;
-    font-family: 'Courier New', monospace; letter-spacing: 0.1em; transition: all 0.2s;
+    padding: 6px 4px; color: #ffcc00aa; font-size: 0.6rem; cursor: pointer;
+    font-family: 'Courier New', 'Lucida Console', monospace; letter-spacing: 0.05em; transition: all 0.2s;
   }
-  .btn-decrypt.invisible { visibility: hidden; pointer-events: none; }
-  .btn-decrypt:hover { border-color: #ffcc00; color: #ffcc00; }
-  .btn-decrypt:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-decrypt.inactive { opacity: 0.25; pointer-events: none; }
+  .btn-decrypt:hover:not(.inactive) { border-color: #ffcc00; color: #ffcc00; }
+  .btn-decrypt:disabled { opacity: 0.2; cursor: not-allowed; }
+
+  /* Backup display */
+  .btn-backup-display {
+    background: transparent; border: 1px solid #ff66ff44; border-radius: 4px;
+    padding: 6px 4px; color: #ff66ff88; font-size: 0.6rem; font-weight: 700;
+    font-family: 'Courier New', 'Lucida Console', monospace; letter-spacing: 0.05em;
+    transition: all 0.3s; pointer-events: none;
+  }
+  .btn-backup-display.has-charges { color: #ff66ff; border-color: #ff66ff88; background: #ff66ff0a; }
+  .btn-backup-display.activating {
+    color: #ff66ff; border-color: #ff66ff; background: #ff66ff22;
+    box-shadow: 0 0 12px #ff66ff44;
+    animation: pulse 0.5s ease-in-out 3;
+  }
+
+  /* Pause button - rectangle */
+  .btn-pause-rect {
+    background: transparent; border: 1px solid #00ff8855; border-radius: 4px;
+    padding: 6px 4px; color: #00ff88aa; font-size: 0.6rem; font-weight: 700;
+    cursor: pointer; font-family: 'Courier New', 'Lucida Console', monospace;
+    letter-spacing: 0.05em; transition: all 0.2s;
+  }
+  .btn-pause-rect:hover { border-color: #00ff88; color: #00ff88; }
+  .btn-pause-rect:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-pause-rect.paused { border-color: #00ddff55; color: #00ddffaa; }
+  .btn-pause-rect.paused:hover { border-color: #00ddff; color: #00ddff; }
 
   /* Combo flash overlay */
   .combo-flash {
@@ -243,6 +291,12 @@
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     z-index: 60; pointer-events: none; text-align: center;
     opacity: 0; transition: opacity 0.3s;
+    background: rgba(10, 26, 16, 0.92);
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: 1px solid #00ddff44;
+    box-shadow: 0 0 20px rgba(0, 221, 255, 0.15);
+    backdrop-filter: blur(4px);
   }
   .grid-expand-notify.active { opacity: 1; }
   .grid-expand-text {
@@ -339,7 +393,7 @@
     background: transparent; border: 1px solid #00ff8866; border-radius: 4px;
     padding: 10px 32px; cursor: pointer; color: #00ff88;
     font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em;
-    font-family: 'Courier New', monospace; text-shadow: 0 0 8px #00ff8844;
+    font-family: 'Courier New', 'Lucida Console', monospace; text-shadow: 0 0 8px #00ff8844;
     transition: all 0.2s;
     opacity: 0;
     animation: rowSlideIn 0.3s ease-out forwards;
@@ -372,6 +426,10 @@
     50% { transform: scale(1.4); }
     100% { transform: scale(1); }
   }
+  @keyframes victoryPulse {
+    0%, 100% { text-shadow: 0 0 20px #ffcc0066, 0 0 40px #ffcc0022; }
+    50% { text-shadow: 0 0 40px #ffcc00aa, 0 0 80px #ffcc0044, 0 0 120px #ffcc0022; }
+  }
 
   /* Difficulty toggle */
   .difficulty-toggle {
@@ -380,7 +438,7 @@
   }
   .diff-btn {
     background: transparent; border: none; padding: 8px 18px; cursor: pointer;
-    font-family: 'Courier New', monospace; font-size: 0.75rem; font-weight: 700;
+    font-family: 'Courier New', 'Lucida Console', monospace; font-size: 0.75rem; font-weight: 700;
     letter-spacing: 0.15em; color: #00ff8866; transition: all 0.2s;
   }
   .diff-btn.active {
@@ -393,7 +451,6 @@
     font-size: 0.55rem; color: #00ff8866; letter-spacing: 0.2em; text-align: center;
   }
 
-  /* Mobile adjustments */
   /* Splash links */
   .splash-links {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;
@@ -401,7 +458,7 @@
   .btn-link {
     background: transparent; border: 1px solid #00ff8844; border-radius: 4px;
     padding: 6px 14px; color: #00ff8888; font-size: 0.7rem; cursor: pointer;
-    font-family: 'Courier New', monospace; letter-spacing: 0.1em;
+    font-family: 'Courier New', 'Lucida Console', monospace; letter-spacing: 0.1em;
     text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
     transition: all 0.2s;
   }
@@ -477,11 +534,25 @@
     background: transparent; border: 1px solid #00ddff66; border-radius: 4px;
     padding: 10px 32px; cursor: pointer; color: #00ddff;
     font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em;
-    font-family: 'Courier New', monospace; text-shadow: 0 0 8px #00ddff44;
+    font-family: 'Courier New', 'Lucida Console', monospace; text-shadow: 0 0 8px #00ddff44;
     transition: all 0.2s;
   }
   .lb-close:hover { border-color: #00ddff; filter: brightness(1.3); }
   .lb-close:active { transform: scale(0.96); }
+  .lb-personal {
+    width: 100%; margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid #ffcc0033; text-align: center;
+  }
+  .lb-personal-title {
+    font-size: 0.65rem; color: #ffcc0088; letter-spacing: 0.2em; margin-bottom: 4px;
+  }
+  .lb-personal-score {
+    font-size: 0.9rem; font-weight: 700; color: #ffcc00; letter-spacing: 0.1em;
+    text-shadow: 0 0 10px #ffcc0044;
+  }
+  .lb-personal-level {
+    font-size: 0.65rem; color: #ffcc0066; letter-spacing: 0.1em; margin-top: 2px;
+  }
 
   /* Name entry overlay */
   .name-overlay {
@@ -523,7 +594,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 1.3rem; font-weight: 700; letter-spacing: 0.3em;
     color: #00ff88; text-shadow: 0 0 10px #00ff8866;
-    font-family: 'Courier New', monospace;
+    font-family: 'Courier New', 'Lucida Console', monospace;
     position: relative; overflow: hidden;
   }
   .name-cursor {
@@ -542,7 +613,7 @@
     min-width: 26px; height: 32px;
     display: flex; align-items: center; justify-content: center;
     color: #00ff88; font-size: 0.75rem; font-weight: 700;
-    font-family: 'Courier New', monospace; letter-spacing: 0;
+    font-family: 'Courier New', 'Lucida Console', monospace; letter-spacing: 0;
     cursor: pointer; transition: all 0.1s; user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -558,7 +629,7 @@
     background: transparent; border: 1px solid #00ff8866; border-radius: 4px;
     padding: 10px 24px; cursor: pointer; color: #00ff88;
     font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em;
-    font-family: 'Courier New', monospace; text-shadow: 0 0 8px #00ff8844;
+    font-family: 'Courier New', 'Lucida Console', monospace; text-shadow: 0 0 8px #00ff8844;
     transition: all 0.2s;
   }
   .name-btn-submit:hover { border-color: #00ff88; filter: brightness(1.3); }
@@ -568,7 +639,7 @@
     background: transparent; border: 1px solid #00ff8833; border-radius: 4px;
     padding: 10px 24px; cursor: pointer; color: #00ff8866;
     font-size: 0.8rem; font-weight: 700; letter-spacing: 0.2em;
-    font-family: 'Courier New', monospace;
+    font-family: 'Courier New', 'Lucida Console', monospace;
     transition: all 0.2s;
   }
   .name-btn-skip:hover { border-color: #00ff8866; color: #00ff88aa; }
@@ -585,6 +656,142 @@
   }
   .games-counter-number { display: inline; }
 
+  /* Settings gear button */
+  .btn-gear {
+    background: transparent; border: 1px solid #00ff8833; border-radius: 50%;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #00ff88; transition: all 0.2s; flex-shrink: 0;
+  }
+  .btn-gear:hover { border-color: #00ff88; filter: brightness(1.3); }
+  .btn-gear svg { width: 16px; height: 16px; }
+
+  /* Settings overlay */
+  .settings-overlay {
+    display: none;
+    position: absolute; inset: 0; z-index: 95;
+    background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center;
+    animation: overlayIn 0.2s ease-out;
+  }
+  .settings-overlay.active { display: flex; }
+  .settings-panel {
+    background: linear-gradient(170deg, #0a1a10 0%, #0d2218 50%, #081510 100%);
+    border: 1px solid #00ff8844;
+    border-radius: 8px;
+    padding: 20px 24px 18px;
+    width: 88%; max-width: 300px;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    box-shadow: 0 0 40px #00ff8822, inset 0 0 30px #00ff8808;
+    animation: panelIn 0.3s ease-out;
+    position: relative; overflow: hidden;
+  }
+  .settings-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.02) 2px, rgba(0,255,136,0.02) 4px);
+    pointer-events: none;
+  }
+  .settings-title {
+    font-size: 1rem; font-weight: 700; letter-spacing: 0.3em;
+    color: #00ff88; text-shadow: 0 0 15px #00ff8866;
+  }
+  .settings-row {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; padding: 4px 0;
+  }
+  .settings-label {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; color: #00ff8888;
+  }
+  .settings-toggle {
+    background: transparent; border: 1px solid #00ff8844; border-radius: 4px;
+    padding: 5px 14px; cursor: pointer; font-size: 0.65rem; font-weight: 700;
+    font-family: 'Courier New', 'Lucida Console', monospace; letter-spacing: 0.1em;
+    transition: all 0.2s; min-width: 52px; text-align: center;
+  }
+  .settings-toggle.on { color: #00ff88; border-color: #00ff8888; background: #00ff8815; }
+  .settings-toggle.off { color: #ff3355aa; border-color: #ff335544; background: #ff335508; }
+  .settings-toggle:hover { filter: brightness(1.2); }
+
+  /* Speed selector */
+  .speed-selector {
+    display: flex; gap: 0; border-radius: 4px; overflow: hidden;
+    border: 1px solid #00ff8844;
+  }
+  .speed-btn {
+    background: transparent; border: none; padding: 5px 12px; cursor: pointer;
+    font-family: 'Courier New', 'Lucida Console', monospace; font-size: 0.6rem; font-weight: 700;
+    letter-spacing: 0.1em; color: #00ff8866; transition: all 0.2s;
+  }
+  .speed-btn.active {
+    background: #00ddff22; color: #00ddff; text-shadow: 0 0 8px #00ddff44;
+  }
+  .speed-btn:hover:not(.active) { color: #00ff88aa; background: #00ff8808; }
+
+  .settings-divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, #00ff8833, transparent);
+  }
+  .settings-btn {
+    background: transparent; border: 1px solid #00ff8855; border-radius: 4px;
+    padding: 8px 24px; cursor: pointer; color: #00ff88aa;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em;
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    transition: all 0.2s; width: 100%; text-align: center;
+  }
+  .settings-btn:hover { border-color: #00ff88; color: #00ff88; }
+  .settings-btn.danger { border-color: #ff335544; color: #ff3355aa; }
+  .settings-btn.danger:hover { border-color: #ff3355; color: #ff3355; }
+  .settings-close {
+    background: transparent; border: 1px solid #00ff8855; border-radius: 4px;
+    padding: 8px 32px; cursor: pointer; color: #00ff88;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em;
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    transition: all 0.2s;
+  }
+  .settings-close:hover { border-color: #00ff88; filter: brightness(1.3); }
+
+  /* Victory overlay */
+  .victory-overlay {
+    display: none;
+    position: absolute; inset: 0; z-index: 110;
+    background: rgba(0,0,0,0.92);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+    animation: overlayIn 0.5s ease-out;
+  }
+  .victory-overlay.active { display: flex; }
+  .victory-title {
+    font-size: clamp(1.2rem, 5vw, 1.8rem); font-weight: 700; letter-spacing: 0.2em;
+    color: #ffcc00; text-shadow: 0 0 30px #ffcc0066, 0 0 60px #ffcc0022;
+    animation: victoryPulse 2s ease-in-out infinite;
+    text-align: center; padding: 0 16px;
+  }
+  .victory-sub {
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.25em;
+    color: #00ff88; text-shadow: 0 0 15px #00ff8866;
+  }
+  .victory-stats {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 16px; border: 1px solid #ffcc0033; border-radius: 8px;
+    background: #ffcc0008;
+  }
+  .victory-stat {
+    font-size: 0.75rem; letter-spacing: 0.15em; color: #00ddff;
+    text-shadow: 0 0 8px #00ddff44;
+  }
+  .victory-stat .val { color: #ffcc00; font-weight: 700; }
+  .victory-btn {
+    margin-top: 8px;
+    background: transparent; border: 2px solid #ffcc00; border-radius: 6px;
+    padding: 12px 36px; cursor: pointer; color: #ffcc00;
+    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.2em;
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    text-shadow: 0 0 10px #ffcc0066;
+    transition: all 0.2s;
+  }
+  .victory-btn:hover { filter: brightness(1.3); }
+  .victory-btn:active { transform: scale(0.96); }
+
   @media (max-height: 600px) {
     .grid-container { width: min(82vw, 66vh, 370px); height: min(82vw, 66vh, 370px); }
     .hud { padding: 8px 16px 2px; }
@@ -598,12 +805,15 @@
 
 <div id="game">
   <div class="scanlines"></div>
+  <div class="grid-bg-pattern" id="grid-bg-pattern"></div>
+  <div class="anon-mask-bg"></div>
 
   <!-- COMBO FLASH -->
   <div class="combo-flash" id="combo-flash"></div>
 
   <!-- SPLASH SCREEN -->
   <div id="splash">
+    <div style="position:absolute;top:8px;left:10px;font-size:0.55rem;color:#00ff8844;letter-spacing:0.1em;font-family:'Courier New',monospace">v0.51</div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
       <div class="logo-icon">
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
@@ -631,13 +841,13 @@
       </div>
     </div>
     <button class="btn-main" id="btn-start">START</button>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button class="btn-small" id="btn-mute-sfx-splash">SFX ON</button>
-      <button class="btn-small" id="btn-mute-music-splash">MUSIC ON</button>
-    </div>
     <div class="splash-links">
+      <button class="btn-link" id="btn-settings-splash" style="border-color:#00ff8844;color:#00ff8888">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        SETTINGS
+      </button>
       <button class="btn-link lb" id="btn-leaderboard">&#x1F3C6; LEADERBOARD</button>
-      <a class="btn-link star" href="https://github.com/roundyyy/Pattern_Hacker" target="_blank" rel="noopener">&#x2B50; STAR ON GITHUB</a>
+      <a class="btn-link star" href="https://github.com/roundyyy/Pattern_Hacker" target="_blank" rel="noopener">&#x2B50; GITHUB SOURCE CODE</a>
     </div>
     <div class="games-counter">
       TOTAL GAMES PLAYED: <span class="games-counter-number" id="games-counter-display"><script type="text/javascript" src="https://counter.websiteout.com/js/2/5/36/0"></script></span>
@@ -657,11 +867,12 @@
       </div>
       <div class="hud-cell">
         <div class="hud-label">GRID</div>
-        <div class="hud-value" id="hud-grid">3x3</div>
+        <div class="hud-value" id="hud-grid">2x2</div>
       </div>
-      <div class="hud-cell">
-        <div class="hud-label">BEST</div>
-        <div class="hud-value" id="hud-best" style="color:#ffcc00">0</div>
+      <div class="hud-cell" style="display:flex;align-items:center;justify-content:flex-end">
+        <button class="btn-gear" id="btn-gear-game">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </div>
     </div>
 
@@ -687,19 +898,23 @@
 
     <!-- Grid expand notification -->
     <div class="grid-expand-notify" id="grid-expand-notify">
-      <div class="grid-expand-text" id="grid-expand-text">GRID EXPANDED: 4x4</div>
+      <div class="grid-expand-text" id="grid-expand-text">GRID EXPANDED: 2x3</div>
       <div class="grid-expand-sub">NEW NODES UNLOCKED</div>
     </div>
 
     <div class="progress-dots" id="progress-dots"></div>
 
     <div class="bottom-bar" id="bottom-bar">
-      <button class="btn-decrypt invisible" id="btn-decrypt">DECRYPT (0)</button>
-      <button class="btn-repeat invisible" id="btn-repeat">SHOW AGAIN</button>
-      <button class="btn-main invisible" id="btn-retry">RETRY</button>
-      <button class="btn-icon" id="btn-pause">&#x23F8;</button>
-      <button class="btn-icon" id="btn-mute-sfx">SFX</button>
-      <button class="btn-icon" id="btn-mute-music">MUS</button>
+      <button class="btn-decrypt inactive" id="btn-decrypt">DECRYPT (0)</button>
+      <button class="btn-repeat inactive" id="btn-repeat">SHOW AGAIN</button>
+      <div class="btn-backup-display" id="btn-backup">BACKUP: 0</div>
+      <button class="btn-pause-rect" id="btn-pause">PAUSE</button>
+    </div>
+    <div class="bottom-bar" id="retry-bar" style="height:auto;padding-bottom:8px">
+      <div class="retry-buttons invisible" id="retry-buttons">
+        <button class="btn-main retry-half" id="btn-retry">RETRY</button>
+        <button class="btn-main retry-half" id="btn-menu-gameover" style="border-color:#ff335588;color:#ff3355;text-shadow:0 0 10px #ff335544">MAIN MENU</button>
+      </div>
     </div>
 
     <!-- Pause overlay -->
@@ -707,7 +922,7 @@
       <div class="pause-title">PAUSED</div>
       <div class="pause-sub">SYSTEM STANDBY</div>
       <button class="btn-main" id="btn-resume">RESUME</button>
-      <button class="btn-small" id="btn-exit-menu" style="border-color:#ff335544;color:#ff3355aa;margin-top:4px">EXIT TO MENU</button>
+      <button class="btn-small" id="btn-exit-menu-pause" style="border-color:#ff335544;color:#ff3355aa;margin-top:4px">EXIT TO MENU</button>
     </div>
 
     <!-- Score overlay -->
@@ -729,13 +944,55 @@
         </div>
       </div>
     </div>
+
+    <!-- Victory overlay -->
+    <div class="victory-overlay" id="victory-overlay">
+      <div class="victory-title" id="victory-title">CONGRATULATIONS</div>
+      <div class="victory-sub">SYSTEM FULLY BREACHED</div>
+      <div class="victory-stats" id="victory-stats"></div>
+      <button class="victory-btn" id="victory-btn-menu">BACK TO MENU</button>
+    </div>
   </div>
 
-  <!-- Leaderboard overlay (splash screen level, outside game-screen) -->
+  <!-- Settings overlay (shared between splash and game) -->
+  <div class="settings-overlay" id="settings-overlay">
+    <div class="settings-panel">
+      <div class="settings-title">// SETTINGS</div>
+
+      <div class="settings-row">
+        <span class="settings-label">MUSIC</span>
+        <button class="settings-toggle on" id="settings-music">ON</button>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label">SOUND FX</span>
+        <button class="settings-toggle on" id="settings-sfx">ON</button>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-row">
+        <span class="settings-label">PATTERN SPEED</span>
+      </div>
+      <div class="speed-selector" id="speed-selector">
+        <button class="speed-btn" data-speed="slow">SLOW</button>
+        <button class="speed-btn active" data-speed="medium">MEDIUM</button>
+        <button class="speed-btn" data-speed="fast">FAST</button>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <button class="settings-btn danger" id="settings-back-to-menu">BACK TO MAIN MENU</button>
+      <button class="settings-close" id="settings-close">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- Leaderboard overlay -->
   <div class="lb-overlay" id="lb-overlay">
     <div class="lb-panel" id="lb-panel">
       <div class="lb-title">// LEADERBOARD</div>
       <div class="lb-table" id="lb-table"></div>
+      <div class="lb-personal" id="lb-personal" style="display:none"></div>
       <button class="lb-close" id="lb-close">CLOSE</button>
     </div>
   </div>
@@ -743,11 +1000,10 @@
 
 <script>
 // ─── CONFIG ───
-let difficulty = 'normal'; // 'practice', 'easy' or 'normal'
+let difficulty = 'normal';
 
 const CONFIG = {
   normal: {
-    MAX_GRID_SIZE: 6,
     SHOW_DELAY_BASE: 700,
     SHOW_DELAY_MIN: 350,
     SHOW_DELAY_DECAY: 25,
@@ -765,7 +1021,6 @@ const CONFIG = {
     NO_TIMER: false,
   },
   easy: {
-    MAX_GRID_SIZE: 6,
     SHOW_DELAY_BASE: 900,
     SHOW_DELAY_MIN: 500,
     SHOW_DELAY_DECAY: 15,
@@ -783,7 +1038,6 @@ const CONFIG = {
     NO_TIMER: false,
   },
   practice: {
-    MAX_GRID_SIZE: 6,
     SHOW_DELAY_BASE: 900,
     SHOW_DELAY_MIN: 500,
     SHOW_DELAY_DECAY: 15,
@@ -808,23 +1062,42 @@ const PERFECT_TIME_RATIO = 0.4;
 const DECRYPT_EVERY_N_PERFECT = 3;
 const DECRYPT_HINT_NODES = 3;
 
-// ─── DYNAMIC GRID STATE ───
-let gridSize = 3;
-let nodes = gridSize * gridSize;
-let nodePositions = computeNodePositions(gridSize);
+// ─── GRID PROGRESSION (rows x cols) ───
+const GRID_PROGRESSION = [
+  [2,2], [2,3], [3,3], [3,4], [4,4], [4,5], [5,5], [5,6], [6,6]
+];
 
-function computeNodePositions(gs) {
-  const n = gs * gs;
+let gridProgressionIndex = 0;
+let gridRows = 2;
+let gridCols = 2;
+let nodes = gridRows * gridCols;
+let nodePositions = computeNodePositions(gridRows, gridCols);
+
+// ─── PATTERN SPEED ───
+let patternSpeed = 'medium'; // 'slow', 'medium', 'fast'
+const SPEED_MULTIPLIERS = { slow: 1.5, medium: 1.0, fast: 0.6 };
+
+function getSpeedMultiplier() {
+  return SPEED_MULTIPLIERS[patternSpeed] || 1.0;
+}
+
+function computeNodePositions(rows, cols) {
+  const n = rows * cols;
   return Array.from({ length: n }, (_, i) => ({
-    row: Math.floor(i / gs),
-    col: i % gs,
+    row: Math.floor(i / cols),
+    col: i % cols,
   }));
 }
 
-function recalcGrid(newSize) {
-  gridSize = newSize;
-  nodes = gridSize * gridSize;
-  nodePositions = computeNodePositions(gridSize);
+function recalcGrid(rows, cols) {
+  gridRows = rows;
+  gridCols = cols;
+  nodes = gridRows * gridCols;
+  nodePositions = computeNodePositions(gridRows, gridCols);
+}
+
+function gridLabel() {
+  return `${gridRows}x${gridCols}`;
 }
 
 // ─── STATE ───
@@ -855,13 +1128,15 @@ let pausedTimeRemaining = 0;
 let perfectClears = 0;
 let decryptCharges = 0;
 let decryptUsedThisLevel = false;
-let levelLinesOffset = 0; // reset when grid expands so patterns start short again
+let levelLinesOffset = 0;
+let settingsOpenFrom = null; // 'splash' or 'game'
+let settingsPausedGame = false; // true if settings auto-paused the game
+let backupCharges = 0;
+let lastBackupThreshold = 0; // tracks last score threshold that awarded a backup
 
-// Lines stored as simple [from, to] arrays
 let shownLineSegments = [];
 let userLineSegments = [];
 
-// Drag trail state
 let dragTrailActive = false;
 let dragTrailX = 0;
 let dragTrailY = 0;
@@ -939,6 +1214,30 @@ class AudioEngine {
       setTimeout(() => this._play(base + i * 80, 0.2, 'triangle', 0.1), d)
     );
   }
+  backupActivate() {
+    // Techy restore sound: rising digital sweep
+    [0, 80, 160, 240, 320].forEach((d, i) =>
+      setTimeout(() => {
+        this._play(300 + i * 120, 0.25, 'square', 0.08);
+        this._play(200 + i * 80, 0.3, 'sine', 0.06);
+      }, d)
+    );
+  }
+  backupEarned() {
+    // Notification chime for earning a backup
+    [0, 100, 200, 350].forEach((d, i) =>
+      setTimeout(() => this._play(500 + i * 60, 0.2, 'triangle', 0.1), d)
+    );
+  }
+  victory() {
+    const notes = [523, 587, 659, 784, 880, 1047, 1175, 1319];
+    notes.forEach((freq, i) => {
+      setTimeout(() => {
+        this._play(freq, 0.5, 'sine', 0.12);
+        this._play(freq * 0.5, 0.5, 'triangle', 0.06);
+      }, i * 120);
+    });
+  }
 }
 const audio = new AudioEngine();
 
@@ -970,24 +1269,25 @@ function toggleMusic() {
   } else {
     if (musicAudio && state !== 'idle') musicAudio.play().catch(() => {});
   }
-  updateMusicButtons();
+  updateSettingsToggles();
 }
 function toggleSfx() {
   sfxMuted = !sfxMuted;
   localStorage.setItem('ph-sfx-muted', sfxMuted ? '1' : '0');
-  updateSfxButtons();
+  updateSettingsToggles();
 }
-function updateMusicButtons() {
-  const label = musicMuted ? 'MUSIC OFF' : 'MUSIC ON';
-  const icon = musicMuted ? 'MUT' : 'MUS';
-  document.getElementById('btn-mute-music-splash').textContent = label;
-  document.getElementById('btn-mute-music').textContent = icon;
-}
-function updateSfxButtons() {
-  const label = sfxMuted ? 'SFX OFF' : 'SFX ON';
-  const icon = sfxMuted ? 'OFF' : 'SFX';
-  document.getElementById('btn-mute-sfx-splash').textContent = label;
-  document.getElementById('btn-mute-sfx').textContent = icon;
+
+function updateSettingsToggles() {
+  const musicBtn = document.getElementById('settings-music');
+  const sfxBtn = document.getElementById('settings-sfx');
+  if (musicBtn) {
+    musicBtn.textContent = musicMuted ? 'OFF' : 'ON';
+    musicBtn.className = 'settings-toggle ' + (musicMuted ? 'off' : 'on');
+  }
+  if (sfxBtn) {
+    sfxBtn.textContent = sfxMuted ? 'OFF' : 'ON';
+    sfxBtn.className = 'settings-toggle ' + (sfxMuted ? 'off' : 'on');
+  }
 }
 
 // ─── HIGH SCORE ───
@@ -1042,7 +1342,7 @@ function generatePattern(numLines) {
     const fc = cfg();
     const farChance = Math.min(fc.FAR_CHANCE_MAX, fc.FAR_CHANCE_BASE + (level - 1) * fc.FAR_CHANCE_PER_LEVEL);
     const adjacent = [];
-    const straight = []; // horizontal or vertical adjacent
+    const straight = [];
     const far = [];
     for (const i of pool) {
       const p = nodePositions[i];
@@ -1061,7 +1361,6 @@ function generatePattern(numLines) {
     if (far.length > 0 && (adjacent.length === 0 || Math.random() < farChance)) {
       chosen = far[Math.floor(Math.random() * far.length)];
     } else if (adjacent.length > 0) {
-      // In easy mode, prefer horizontal/vertical moves over diagonal
       if (fc.PREFER_STRAIGHT && straight.length > 0 && Math.random() < 0.75) {
         chosen = straight[Math.floor(Math.random() * straight.length)];
       } else {
@@ -1078,31 +1377,153 @@ function generatePattern(numLines) {
 }
 
 // ─── GRID EXPANSION CHECK ───
+function isMaxGrid() {
+  return gridProgressionIndex >= GRID_PROGRESSION.length - 1;
+}
+
 function checkGridWillExpand() {
-  if (gridSize >= cfg().MAX_GRID_SIZE) return false;
+  if (isMaxGrid()) return false;
   const uniqueNodes = new Set(pattern);
   return uniqueNodes.size >= nodes;
 }
 
-function applyGridExpansion() {
+function checkVictory() {
+  if (!isMaxGrid()) return false;
+  const uniqueNodes = new Set(pattern);
+  return uniqueNodes.size >= nodes;
+}
+
+function applyGridExpansion(onDone) {
   levelLinesOffset = level;
-  recalcGrid(gridSize + 1);
+  gridProgressionIndex++;
+  shownLineSegments = [];
+  userLineSegments = [];
+  ghostLineSegments = [];
+  const [newRows, newCols] = GRID_PROGRESSION[gridProgressionIndex];
+  recalcGrid(newRows, newCols);
   createGrid();
   updateGridHud();
-  showGridExpandNotification();
+  applyGridTheme(gridProgressionIndex);
+  showGridExpandNotification(onDone);
   if (!sfxMuted) audio.gridExpand();
   haptic([50, 30, 50, 30, 80]);
 }
 
-function showGridExpandNotification() {
+function showGridExpandNotification(onDone) {
   const notify = document.getElementById('grid-expand-notify');
-  document.getElementById('grid-expand-text').textContent = `GRID EXPANDED: ${gridSize}x${gridSize}`;
+  const theme = GRID_THEMES[gridProgressionIndex] || GRID_THEMES[0];
+  // Extract the middle color from the gradient for the popup background
+  const bgMatch = theme.bg.match(/#[0-9a-fA-F]{6}/g);
+  const baseColor = bgMatch ? bgMatch[1] || bgMatch[0] : '#0a1a10';
+  notify.style.background = hexToRgba(baseColor, 0.92);
+  document.getElementById('grid-expand-text').textContent = `GRID EXPANDED: ${gridLabel()}`;
   notify.classList.add('active');
-  setTimeout(() => notify.classList.remove('active'), 2000);
+  setTimeout(() => {
+    notify.classList.remove('active');
+    if (onDone) setTimeout(onDone, 300); // wait for fade-out transition
+  }, 2000);
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ─── GRID TIER VISUAL THEMES ───
+const GRID_THEMES = [
+  // 0: 2x2 - Pure green (base)
+  {
+    bg: 'linear-gradient(170deg, #050d08 0%, #0a1a10 40%, #071210 100%)',
+    pattern: 'none',
+    scanline: 'rgba(0,255,136,0.015)',
+  },
+  // 1: 2x3 - Green with faint dots
+  {
+    bg: 'linear-gradient(170deg, #050d09 0%, #091a12 40%, #071311 100%)',
+    pattern: 'radial-gradient(circle, rgba(0,255,136,0.03) 1px, transparent 1px)',
+    patternSize: '24px 24px',
+    scanline: 'rgba(0,255,136,0.015)',
+  },
+  // 2: 3x3 - Teal shift, small grid
+  {
+    bg: 'linear-gradient(170deg, #050c0d 0%, #081a18 40%, #061214 100%)',
+    pattern: 'linear-gradient(rgba(0,220,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,220,255,0.025) 1px, transparent 1px)',
+    patternSize: '30px 30px, 30px 30px',
+    scanline: 'rgba(0,220,255,0.015)',
+  },
+  // 3: 3x4 - Deeper teal, crosshatch
+  {
+    bg: 'linear-gradient(170deg, #040b0e 0%, #071820 40%, #051118 100%)',
+    pattern: 'linear-gradient(45deg, rgba(0,200,240,0.02) 1px, transparent 1px), linear-gradient(-45deg, rgba(0,200,240,0.02) 1px, transparent 1px)',
+    patternSize: '20px 20px, 20px 20px',
+    scanline: 'rgba(0,200,240,0.015)',
+  },
+  // 4: 4x4 - Blue shift, diagonal traces
+  {
+    bg: 'linear-gradient(170deg, #040a10 0%, #061528 40%, #040e1a 100%)',
+    pattern: 'repeating-linear-gradient(135deg, transparent, transparent 14px, rgba(60,130,255,0.025) 14px, rgba(60,130,255,0.025) 15px)',
+    patternSize: '100% 100%',
+    scanline: 'rgba(60,130,255,0.015)',
+  },
+  // 5: 4x5 - Blue-indigo, circuit dots
+  {
+    bg: 'linear-gradient(170deg, #050914 0%, #0a1430 40%, #060c20 100%)',
+    pattern: 'radial-gradient(circle, rgba(80,120,255,0.035) 1.5px, transparent 1.5px), repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(80,120,255,0.02) 19px, rgba(80,120,255,0.02) 20px)',
+    patternSize: '20px 20px, 20px 20px',
+    scanline: 'rgba(80,120,255,0.015)',
+  },
+  // 6: 5x5 - Purple, hex-like pattern
+  {
+    bg: 'linear-gradient(170deg, #08061a 0%, #120c2a 40%, #0a0818 100%)',
+    pattern: 'radial-gradient(ellipse at 50% 0%, rgba(160,100,255,0.03) 2px, transparent 2px), radial-gradient(ellipse at 0% 100%, rgba(160,100,255,0.03) 2px, transparent 2px)',
+    patternSize: '28px 16px, 28px 16px',
+    patternPosition: '0 0, 14px 8px',
+    scanline: 'rgba(160,100,255,0.015)',
+  },
+  // 7: 5x6 - Deep purple, dense grid
+  {
+    bg: 'linear-gradient(170deg, #0a0518 0%, #180a2e 40%, #0c061c 100%)',
+    pattern: 'linear-gradient(rgba(180,80,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(180,80,255,0.02) 1px, transparent 1px), repeating-linear-gradient(45deg, transparent, transparent 9px, rgba(180,80,255,0.015) 9px, rgba(180,80,255,0.015) 10px)',
+    patternSize: '16px 16px, 16px 16px, 100% 100%',
+    scanline: 'rgba(180,80,255,0.012)',
+  },
+  // 8: 6x6 - Crimson, dense data rain
+  {
+    bg: 'linear-gradient(170deg, #0e050a 0%, #1a0818 40%, #120610 100%)',
+    pattern: 'repeating-linear-gradient(180deg, transparent, transparent 5px, rgba(255,50,100,0.018) 5px, rgba(255,50,100,0.018) 6px), linear-gradient(rgba(255,50,100,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,50,100,0.02) 1px, transparent 1px)',
+    patternSize: '100% 100%, 22px 22px, 22px 22px',
+    scanline: 'rgba(255,50,100,0.012)',
+  },
+];
+
+function applyGridTheme(index) {
+  const game = document.getElementById('game');
+  const bgPattern = document.getElementById('grid-bg-pattern');
+  const scanlines = document.querySelector('.scanlines');
+  const theme = GRID_THEMES[index] || GRID_THEMES[0];
+
+  game.style.background = theme.bg;
+  game.style.transition = 'background 1s ease';
+
+  if (theme.pattern === 'none') {
+    bgPattern.classList.remove('active');
+    bgPattern.style.background = 'none';
+  } else {
+    bgPattern.style.background = theme.pattern;
+    bgPattern.style.backgroundSize = theme.patternSize || 'auto';
+    bgPattern.style.backgroundPosition = theme.patternPosition || '0 0';
+    bgPattern.classList.add('active');
+  }
+
+  if (scanlines && theme.scanline) {
+    scanlines.style.background = `repeating-linear-gradient(0deg, transparent, transparent 2px, ${theme.scanline} 2px, ${theme.scanline} 4px)`;
+  }
 }
 
 function updateGridHud() {
-  document.getElementById('hud-grid').textContent = `${gridSize}x${gridSize}`;
+  document.getElementById('hud-grid').textContent = gridLabel();
 }
 
 // ─── GLITCH TEXT ───
@@ -1127,7 +1548,6 @@ const gridContainer = $('grid-container');
 const gridSvg = $('grid-svg');
 const hudLevel = $('hud-level');
 const hudScore = $('hud-score');
-const hudBest = $('hud-best');
 const livesDisplay = $('lives-display');
 const comboBadge = $('combo-badge');
 const timerDisplay = $('timer-display');
@@ -1135,19 +1555,25 @@ const bonusInfo = $('bonus-info');
 const statusText = $('status-text');
 const progressDots = $('progress-dots');
 const btnRetry = $('btn-retry');
+const retryButtons = $('retry-buttons');
+const btnMenuGameover = $('btn-menu-gameover');
 const btnRepeat = $('btn-repeat');
 const btnDecrypt = $('btn-decrypt');
 const btnPause = $('btn-pause');
+const btnBackup = $('btn-backup');
 const scoreOverlay = $('score-overlay');
 const scorePanel = $('score-panel');
 const comboFlash = $('combo-flash');
 const pauseOverlay = $('pause-overlay');
+const settingsOverlay = $('settings-overlay');
+const victoryOverlay = $('victory-overlay');
 
 // ─── NODE HELPERS ───
 function getNodeCenter(idx) {
   const p = nodePositions[idx];
-  const spacing = 100 / (gridSize + 1);
-  return { x: spacing * (p.col + 1), y: spacing * (p.row + 1) };
+  const xSpacing = 100 / (gridCols + 1);
+  const ySpacing = 100 / (gridRows + 1);
+  return { x: xSpacing * (p.col + 1), y: ySpacing * (p.row + 1) };
 }
 
 // ─── RENDER ───
@@ -1155,14 +1581,16 @@ let nodeEls = [];
 function createGrid() {
   nodeEls.forEach(n => n.remove());
   nodeEls = [];
-  const nodeSizePct = Math.max(5.5, 48 / gridSize);
-  const maxPx = Math.round(160 / gridSize);
+  const maxDim = Math.max(gridRows, gridCols);
+  const nodeSizePct = Math.max(5.5, 48 / maxDim);
+  const maxPx = Math.round(160 / maxDim);
 
   for (let idx = 0; idx < nodes; idx++) {
     const pos = nodePositions[idx];
-    const spacing = 100 / (gridSize + 1);
-    const cx = spacing * (pos.col + 1);
-    const cy = spacing * (pos.row + 1);
+    const xSpacing = 100 / (gridCols + 1);
+    const ySpacing = 100 / (gridRows + 1);
+    const cx = xSpacing * (pos.col + 1);
+    const cy = ySpacing * (pos.row + 1);
     const node = document.createElement('div');
     node.className = 'node';
     node.style.left = cx + '%';
@@ -1260,7 +1688,6 @@ function updateLives() {
 function updateHud() {
   hudLevel.textContent = level;
   hudScore.textContent = score.toLocaleString();
-  hudBest.textContent = highScore.toLocaleString();
   updateGridHud();
   const colors = { showing: '#00ddff', success: '#00ff88', fail: '#ff3355', gameover: '#ff3355' };
   hudLevel.style.color = colors[state] || '#00ff88';
@@ -1316,12 +1743,37 @@ function updateBonusInfo() {
 
 function updateDecryptButton() {
   if (decryptCharges > 0 && state === 'input' && userPattern.length < pattern.length) {
-    btnDecrypt.classList.remove('invisible');
+    btnDecrypt.classList.remove('inactive');
     btnDecrypt.disabled = false;
     btnDecrypt.textContent = `DECRYPT (${decryptCharges})`;
   } else {
-    btnDecrypt.classList.add('invisible');
+    btnDecrypt.classList.add('inactive');
   }
+}
+
+function updateBackupDisplay() {
+  if (backupCharges > 0) {
+    btnBackup.textContent = `BACKUP: ${backupCharges}`;
+    btnBackup.classList.add('has-charges');
+  } else {
+    btnBackup.textContent = 'BACKUP: 0';
+    btnBackup.classList.remove('has-charges');
+  }
+  btnBackup.classList.remove('activating');
+}
+
+function checkAndAwardBackup(oldScore, newScore) {
+  const oldThreshold = Math.floor(oldScore / 5000);
+  const newThreshold = Math.floor(newScore / 5000);
+  const earned = newThreshold - oldThreshold;
+  if (earned > 0) {
+    backupCharges += earned;
+    lastBackupThreshold = newThreshold * 5000;
+    updateBackupDisplay();
+    if (!sfxMuted) audio.backupEarned();
+    return earned;
+  }
+  return 0;
 }
 
 // ─── COMBO FLASH ───
@@ -1406,18 +1858,27 @@ function doPause() {
   paused = true;
   pausedTimeRemaining = timeRemaining;
   pauseOverlay.classList.add('active');
-  btnPause.disabled = true; btnPause.style.opacity = '0.3';
+  btnPause.textContent = 'RESUME';
+  btnPause.classList.add('paused');
+  if (musicAudio && !musicMuted) musicAudio.pause();
 }
 
 function doResume() {
   if (!paused) return;
   paused = false;
   pauseOverlay.classList.remove('active');
-  btnPause.disabled = false; btnPause.style.opacity = '1';
+  btnPause.textContent = 'PAUSE';
+  btnPause.classList.remove('paused');
+  if (musicAudio && !musicMuted) musicAudio.play().catch(() => {});
+}
+
+function togglePause() {
+  if (paused) doResume();
+  else doPause();
 }
 
 // ─── SCORE MODAL ───
-function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, timeBonusPoints, timeBonusLabel, totalScore, timeUsed, timeLimit, newRecord, gridExpanded, earnedExtraLife, onContinue }) {
+function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, timeBonusPoints, timeBonusLabel, totalScore, timeUsed, timeLimit, newRecord, gridExpanded, nextGridLabel, earnedExtraLife, backupsEarned, onContinue }) {
   let delay = 0;
   const d = (ms) => { delay += ms; return `animation-delay:${delay}ms;`; };
 
@@ -1455,10 +1916,9 @@ function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, time
   }
 
   if (gridExpanded) {
-    const newGs = gridSize + 1;
     html += `<div class="score-row" style="${d(100)}">
       <span class="score-row-label">GRID UPGRADE</span>
-      <span class="score-row-value cyan">${newGs}x${newGs}</span>
+      <span class="score-row-value cyan">${nextGridLabel}</span>
     </div>`;
   }
 
@@ -1466,6 +1926,13 @@ function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, time
     html += `<div class="score-row" style="${d(100)}">
       <span class="score-row-label">BONUS LIFE</span>
       <span class="score-row-value green">+1 &#x1F49A;</span>
+    </div>`;
+  }
+
+  if (backupsEarned > 0) {
+    html += `<div class="score-row" style="${d(100)}">
+      <span class="score-row-label">SYS BACKUP +${backupsEarned}</span>
+      <span class="score-row-value pink">&#x1F6E1; ${backupCharges} STORED</span>
     </div>`;
   }
 
@@ -1503,6 +1970,23 @@ function hideScoreModal() {
   scoreOverlay.classList.remove('active');
 }
 
+// ─── VICTORY SCREEN ───
+function showVictoryScreen() {
+  if (!sfxMuted) audio.victory();
+  haptic([50, 30, 50, 30, 80, 50, 100]);
+
+  const stats = $('victory-stats');
+  stats.innerHTML = `
+    <div class="victory-stat">FINAL SCORE: <span class="val">${score.toLocaleString()}</span></div>
+    <div class="victory-stat">LEVEL REACHED: <span class="val">${level}</span></div>
+    <div class="victory-stat">DIFFICULTY: <span class="val">${difficulty.toUpperCase()}</span></div>
+    <div class="victory-stat">FINAL GRID: <span class="val">6x6</span></div>
+  `;
+
+  glitchText($('victory-title'), 'CONGRATULATIONS');
+  victoryOverlay.classList.add('active');
+}
+
 // ─── SHOW PATTERN ───
 function showPatternSequence(pat, onComplete) {
   state = 'showing';
@@ -1521,9 +2005,10 @@ function showPatternSequence(pat, onComplete) {
   updateCombo();
   updateBonusInfo();
   updateDecryptButton();
-  btnRepeat.classList.add('invisible');
-  btnRetry.classList.add('invisible');
+  btnRepeat.classList.add('inactive');
+  retryButtons.classList.add('invisible');
   timerDisplay.classList.add('invisible');
+  btnPause.disabled = true; btnPause.style.opacity = '0.3';
 
   // Clean up any lingering new-record elements
   const oldRecs = statusText.parentElement.querySelectorAll('.new-record');
@@ -1534,7 +2019,8 @@ function showPatternSequence(pat, onComplete) {
   statusText.style.color = '#00ddff';
 
   const c = cfg();
-  const showDelay = Math.max(c.SHOW_DELAY_MIN, c.SHOW_DELAY_BASE - (level - 1) * c.SHOW_DELAY_DECAY);
+  const speedMul = getSpeedMultiplier();
+  const showDelay = Math.max(c.SHOW_DELAY_MIN * speedMul, (c.SHOW_DELAY_BASE - (level - 1) * c.SHOW_DELAY_DECAY) * speedMul);
   let i = 0;
 
   showTimer = setTimeout(function step() {
@@ -1579,15 +2065,16 @@ function enterInputState() {
   updateCombo();
   updateBonusInfo();
   updateDecryptButton();
+  updateBackupDisplay();
   startTimer();
   btnPause.disabled = false; btnPause.style.opacity = '1';
   if (!repeatUsed) {
     const remaining = cfg().MAX_REPEATS - repeatCount;
-    btnRepeat.classList.remove('invisible');
+    btnRepeat.classList.remove('inactive');
     btnRepeat.disabled = false;
     btnRepeat.textContent = remaining > 1 ? `SHOW AGAIN (${remaining})` : 'SHOW AGAIN';
   } else {
-    btnRepeat.classList.add('invisible');
+    btnRepeat.classList.add('inactive');
   }
   for (let i = 0; i < nodes; i++) nodeEls[i].style.cursor = 'pointer';
 }
@@ -1634,7 +2121,7 @@ function handleDecrypt() {
   }
 
   applyNextHint();
-  btnDecrypt.classList.add('invisible');
+  btnDecrypt.classList.add('inactive');
 }
 
 // ─── START ───
@@ -1651,11 +2138,17 @@ function startGame() {
   perfectClears = 0;
   decryptCharges = 0;
   decryptUsedThisLevel = false;
+  backupCharges = 0;
+  lastBackupThreshold = 0;
   levelLinesOffset = 0;
   loadHighScore();
-  recalcGrid(3);
+  gridProgressionIndex = 0;
+  const [startRows, startCols] = GRID_PROGRESSION[0];
+  recalcGrid(startRows, startCols);
   createGrid();
+  applyGridTheme(0);
   updateLives();
+  updateBackupDisplay();
   startLevel(1);
   playMusic();
 }
@@ -1666,6 +2159,9 @@ function startLevel(lvl) {
   repeatUsed = false;
   repeatCount = 0;
   decryptUsedThisLevel = false;
+  btnPause.textContent = 'PAUSE';
+  btnPause.classList.remove('paused');
+  paused = false;
   const numLines = (lvl - levelLinesOffset) + cfg().EXTRA_LINES;
   const pat = generatePattern(numLines);
   pattern = pat;
@@ -1723,11 +2219,14 @@ function handleSuccess() {
   const timeBonusPoints = calculateTimeBonusPoints();
   const timeBonusLabel = getTimeBonusLabel(timeRemaining, timeLimitForLevel);
   const baseScore = level * 100;
-  // Diminishing-returns combo: sqrt curve keeps combo meaningful but not dominant
   const comboMultiplier = 1 + 0.5 * Math.sqrt(newCombo - 1);
   const comboScore = Math.round(baseScore * comboMultiplier);
   const levelScore = comboScore + timeBonusPoints;
+  const oldScore = score;
   score += levelScore;
+
+  // Check for system backup awards (every 5000 points)
+  const backupsEarned = checkAndAwardBackup(oldScore, score);
 
   // Track perfect clears for decrypt charges
   if (!repeatUsed && !decryptUsedThisLevel) {
@@ -1779,14 +2278,29 @@ function handleSuccess() {
 
   updateHud();
   updateCombo();
-  btnRepeat.classList.add('invisible');
-  btnDecrypt.classList.add('invisible');
+  btnRepeat.classList.add('inactive');
+  btnDecrypt.classList.add('inactive');
   timerDisplay.classList.add('invisible');
+
+  // Check for victory (completed 6x6 with all nodes used)
+  const isVictory = checkVictory();
 
   // Check if grid should expand, but defer the actual expansion
   const willExpand = checkGridWillExpand();
+  let nextGridLabel = '';
+  if (willExpand) {
+    const nextIdx = gridProgressionIndex + 1;
+    const [nr, nc] = GRID_PROGRESSION[nextIdx];
+    nextGridLabel = `${nr}x${nc}`;
+  }
 
   setTimeout(() => {
+    if (isVictory) {
+      // Show victory screen
+      showVictoryScreen();
+      return;
+    }
+
     showScoreModal({
       levelNum: level,
       baseScore,
@@ -1799,12 +2313,15 @@ function handleSuccess() {
       timeLimit: timeLimitForLevel,
       newRecord: isNewRec,
       gridExpanded: willExpand,
+      nextGridLabel,
       earnedExtraLife,
+      backupsEarned,
       onContinue: () => {
         if (willExpand) {
-          applyGridExpansion();
+          applyGridExpansion(() => startLevel(level + 1));
+        } else {
+          startLevel(level + 1);
         }
-        startLevel(level + 1);
       }
     });
   }, 800);
@@ -1838,7 +2355,6 @@ function showGhostReplay(fromIndex, onComplete) {
     if (i > fromIndex) {
       ghostLineSegments.push([pattern[i - 1], nodeIdx]);
     } else if (i === fromIndex && fromIndex > 0) {
-      // Mark the starting node more visibly
       updateNode(nodeIdx, {
         color: '#00ddff77', border: '#00ddffaa', scale: 1.2,
         glow: '0 0 14px #00ddff66', innerColor: '#00ddff88'
@@ -1855,6 +2371,8 @@ function showGhostReplay(fromIndex, onComplete) {
 
 function handleFail(idx) {
   stopTimer();
+  isDragging = false;
+  lastDragNode = -1;
   dragTrailActive = false;
   if (!cfg().INFINITE_LIVES) {
     lives--;
@@ -1877,12 +2395,10 @@ function handleFail(idx) {
     }
   });
 
-  combo = 0;
   perfectClears = 0;
-  updateCombo();
   renderSvg();
-  btnRepeat.classList.add('invisible');
-  btnDecrypt.classList.add('invisible');
+  btnRepeat.classList.add('inactive');
+  btnDecrypt.classList.add('inactive');
   timerDisplay.classList.add('invisible');
   bonusInfo.classList.add('invisible');
 
@@ -1890,6 +2406,8 @@ function handleFail(idx) {
   setTimeout(() => gridContainer.style.animation = '', 400);
 
   if (lives <= 0 && !cfg().INFINITE_LIVES) {
+    combo = 0;
+    updateCombo();
     state = 'gameover';
     if (!sfxMuted) audio.fail();
     haptic([100, 50, 150]);
@@ -1919,13 +2437,82 @@ function handleFail(idx) {
     updateHud();
     if (difficulty === 'easy' || difficulty === 'practice') {
       setTimeout(() => {
-        btnRetry.classList.remove('invisible');
-        btnRetry.textContent = 'RETRY';
+        retryButtons.classList.remove('invisible');
       }, 1200);
     } else {
       setTimeout(() => showNameEntry(score, level), 1200);
     }
+  } else if (backupCharges > 0) {
+    // System Backup activates - no life lost, restore and continue
+    if (!cfg().INFINITE_LIVES) {
+      lives++; // undo the life loss from above
+      updateLives();
+    }
+    backupCharges--;
+    state = 'input'; // stay in input state
+
+    if (!sfxMuted) audio.backupActivate();
+    haptic([30, 20, 30, 20, 60]);
+
+    // Flash the backup display
+    btnBackup.classList.add('activating');
+    setTimeout(() => btnBackup.classList.remove('activating'), 1800);
+    updateBackupDisplay();
+
+    // Reset fail node visual
+    if (idx >= 0) {
+      updateNode(idx, {
+        color: '#ff66ff55', border: '#ff66ff88', scale: 1.1,
+        glow: '0 0 10px #ff66ff44', innerColor: '#ff66ff66'
+      });
+    }
+
+    statusText.innerHTML = '';
+    glitchText(statusText, 'SYS BACKUP: RESTORING...');
+    statusText.style.color = '#ff66ff';
+
+    // Reset all nodes then re-highlight correct ones
+    resetAllNodes();
+    for (let i = 0; i < userPattern.length; i++) {
+      updateNode(userPattern[i], {
+        color: '#00ff88', border: '#00ff88', scale: 1,
+        glow: '0 0 8px #00ff88', innerColor: '#00ff88'
+      });
+    }
+    // Re-render user line segments
+    renderSvg();
+    updateHud();
+
+    // After a brief pause, let the player continue
+    setTimeout(() => {
+      if (state !== 'input') return; // guard against state changes
+      // Reset the fail node back to normal
+      if (idx >= 0 && !userPattern.includes(idx)) {
+        updateNode(idx);
+      }
+      const linesDrawn = Math.max(0, userPattern.length - 1);
+      const totalLines = pattern.length - 1;
+      statusText.innerHTML = '';
+      glitchText(statusText, `RESTORED - CONTINUE (${linesDrawn}/${totalLines})`);
+      statusText.style.color = '#00ff88';
+      // Restart timer with remaining time (give +2s bonus for the interruption)
+      if (!cfg().NO_TIMER) {
+        const restoredTime = Math.min(timeRemaining + 2, timeLimitForLevel);
+        startTimer();
+        timeRemaining = restoredTime;
+        updateTimerDisplay();
+      }
+      btnPause.disabled = false; btnPause.style.opacity = '1';
+      updateDecryptButton();
+      updateBackupDisplay();
+      updateProgressDots();
+      updateCombo();
+      updateBonusInfo();
+      for (let n = 0; n < nodes; n++) nodeEls[n].style.cursor = 'pointer';
+    }, 1500);
   } else {
+    combo = 0;
+    updateCombo();
     state = 'fail';
     if (!sfxMuted) audio.lifeLost();
     haptic([50, 30, 100]);
@@ -1936,7 +2523,6 @@ function handleFail(idx) {
 
     updateHud();
 
-    // Ghost replay: show what was missing from last correct node
     const lastCorrectIdx = userPattern.length;
     if (lastCorrectIdx > 0 && lastCorrectIdx < pattern.length) {
       showTimer = setTimeout(() => {
@@ -1966,8 +2552,8 @@ function handleRepeat() {
   repeatCount++;
   if (repeatCount >= cfg().MAX_REPEATS) repeatUsed = true;
   stopTimer();
-  btnRepeat.classList.add('invisible');
-  btnDecrypt.classList.add('invisible');
+  btnRepeat.classList.add('inactive');
+  btnDecrypt.classList.add('inactive');
   timerDisplay.classList.add('invisible');
   btnPause.disabled = true; btnPause.style.opacity = '0.3';
   dragTrailActive = false;
@@ -1985,13 +2571,16 @@ let lastDragNode = -1;
 
 function getNodeFromPoint(clientX, clientY) {
   const rect = gridContainer.getBoundingClientRect();
-  const spacing = rect.width / (gridSize + 1);
-  const toleranceMap = { 3: 0.28, 4: 0.20, 5: 0.16, 6: 0.14 };
-  const tolerance = spacing * (toleranceMap[gridSize] || 0.14);
+  const xSpacing = rect.width / (gridCols + 1);
+  const ySpacing = rect.height / (gridRows + 1);
+  const maxDim = Math.max(gridRows, gridCols);
+  const toleranceMap = { 2: 0.35, 3: 0.28, 4: 0.20, 5: 0.16, 6: 0.14 };
+  const minSpacing = Math.min(xSpacing, ySpacing);
+  const tolerance = minSpacing * (toleranceMap[maxDim] || 0.14);
   for (let i = 0; i < nodes; i++) {
     const p = nodePositions[i];
-    const cx = rect.left + spacing * (p.col + 1);
-    const cy = rect.top + spacing * (p.row + 1);
+    const cx = rect.left + xSpacing * (p.col + 1);
+    const cy = rect.top + ySpacing * (p.row + 1);
     const dist = Math.sqrt((clientX - cx) ** 2 + (clientY - cy) ** 2);
     if (dist < tolerance) return i;
   }
@@ -2028,12 +2617,10 @@ function getNodesOnLineBetween(a, b) {
   return result;
 }
 
-// Corridor check: is a point within a finger-width band around the line from A to B?
 function isInCorridor(px, py, ax, ay, bx, by, halfWidth) {
   const dx = bx - ax, dy = by - ay;
   const lenSq = dx * dx + dy * dy;
   if (lenSq === 0) return false;
-  // perpendicular distance from point to line segment
   const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
   const projX = ax + t * dx, projY = ay + t * dy;
   const dist = Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
@@ -2053,26 +2640,23 @@ function handleDragNode(node, clientX, clientY) {
     return;
   }
 
-  // Skip non-target nodes the finger passes through while dragging
   if (nextIndex > 0 && isDragging) {
     const lastConfirmed = pattern[nextIndex - 1];
 
-    // Original grid-aligned passthrough check
     const passThrough = getNodesOnLineBetween(lastConfirmed, expectedNode);
     if (passThrough.has(node)) return;
 
-    // Corridor check: if finger is within a corridor toward the expected node, ignore this dot
     if (clientX !== undefined) {
       const rect = gridContainer.getBoundingClientRect();
-      const spacing = rect.width / (gridSize + 1);
+      const xSpacing = rect.width / (gridCols + 1);
+      const ySpacing = rect.height / (gridRows + 1);
       const pLast = nodePositions[lastConfirmed];
       const pNext = nodePositions[expectedNode];
-      const ax = rect.left + spacing * (pLast.col + 1);
-      const ay = rect.top + spacing * (pLast.row + 1);
-      const bx = rect.left + spacing * (pNext.col + 1);
-      const by = rect.top + spacing * (pNext.row + 1);
-      // Corridor half-width: ~12mm finger width scaled to screen
-      const corridorHalf = spacing * 0.38;
+      const ax = rect.left + xSpacing * (pLast.col + 1);
+      const ay = rect.top + ySpacing * (pLast.row + 1);
+      const bx = rect.left + xSpacing * (pNext.col + 1);
+      const by = rect.top + ySpacing * (pNext.row + 1);
+      const corridorHalf = Math.min(xSpacing, ySpacing) * 0.38;
       if (isInCorridor(clientX, clientY, ax, ay, bx, by, corridorHalf)) return;
     }
   }
@@ -2152,47 +2736,144 @@ btnRetry.addEventListener('click', () => {
   if (!sfxMuted) audio.click();
   stopMusic();
   score = 0; combo = 0; lives = cfg().MAX_LIVES; isNewRecord = false;
-  perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false; levelLinesOffset = 0;
+  perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false;
+  backupCharges = 0; lastBackupThreshold = 0; levelLinesOffset = 0;
   paused = false;
   pauseOverlay.classList.remove('active');
-  // Clean up new-record elements
+  btnPause.textContent = 'PAUSE';
+  btnPause.classList.remove('paused');
   statusText.parentElement.querySelectorAll('.new-record').forEach(el => el.remove());
-  recalcGrid(3);
+  gridProgressionIndex = 0;
+  const [sr, sc] = GRID_PROGRESSION[0];
+  recalcGrid(sr, sc);
   createGrid();
-  btnRetry.classList.add('invisible');
+  applyGridTheme(0);
+  retryButtons.classList.add('invisible');
   nameOverlay.classList.remove('active');
+  victoryOverlay.classList.remove('active');
+  lbOverlay.classList.remove('active');
   hideScoreModal();
+  updateBackupDisplay();
   startLevel(1);
   updateLives();
   playMusic();
 });
+btnMenuGameover.addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  lbOverlay.classList.remove('active');
+  retryButtons.classList.add('invisible');
+  exitToMenu();
+});
 btnRepeat.addEventListener('click', handleRepeat);
 btnDecrypt.addEventListener('click', handleDecrypt);
-btnPause.addEventListener('click', doPause);
+btnPause.addEventListener('click', togglePause);
 $('btn-resume').addEventListener('click', doResume);
-$('btn-mute-sfx').addEventListener('click', () => { audio.init(); toggleSfx(); });
-$('btn-mute-music').addEventListener('click', () => { toggleMusic(); });
-$('btn-mute-sfx-splash').addEventListener('click', () => { audio.init(); toggleSfx(); });
-$('btn-mute-music-splash').addEventListener('click', () => { initMusic(); toggleMusic(); });
+
+// ─── SETTINGS ───
+function openSettings(from) {
+  settingsOpenFrom = from;
+  audio.init();
+  if (!sfxMuted) audio.click();
+  updateSettingsToggles();
+  updateSpeedSelector();
+  // Show/hide "back to menu" based on context
+  const backBtn = $('settings-back-to-menu');
+  backBtn.style.display = (from === 'game') ? '' : 'none';
+  settingsOverlay.classList.add('active');
+  // Pause game if in input state
+  settingsPausedGame = false;
+  if (from === 'game' && state === 'input' && !paused) {
+    doPause();
+    settingsPausedGame = true;
+  }
+}
+
+function closeSettings() {
+  if (!sfxMuted) audio.click();
+  settingsOverlay.classList.remove('active');
+  if (settingsPausedGame && paused) {
+    doResume();
+    settingsPausedGame = false;
+  }
+}
+
+function updateSpeedSelector() {
+  document.querySelectorAll('#speed-selector .speed-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.speed === patternSpeed);
+  });
+}
+
+$('btn-settings-splash').addEventListener('click', () => openSettings('splash'));
+$('btn-gear-game').addEventListener('click', () => openSettings('game'));
+$('settings-close').addEventListener('click', closeSettings);
+settingsOverlay.addEventListener('click', (e) => {
+  if (e.target === settingsOverlay) closeSettings();
+});
+
+$('settings-music').addEventListener('click', () => {
+  initMusic();
+  toggleMusic();
+});
+$('settings-sfx').addEventListener('click', () => {
+  audio.init();
+  toggleSfx();
+});
+
+document.querySelectorAll('#speed-selector .speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!sfxMuted) audio.click();
+    patternSpeed = btn.dataset.speed;
+    localStorage.setItem('ph-pattern-speed', patternSpeed);
+    updateSpeedSelector();
+  });
+});
+
+$('settings-back-to-menu').addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  closeSettings();
+  exitToMenu();
+});
 
 // ─── EXIT TO MAIN MENU ───
-$('btn-exit-menu').addEventListener('click', () => {
-  if (!sfxMuted) audio.click();
+function exitToMenu() {
   clearTimeout(showTimer);
   clearInterval(timerInterval);
   stopMusic();
   state = 'idle';
   paused = false;
   pauseOverlay.classList.remove('active');
+  btnPause.textContent = 'PAUSE';
+  btnPause.classList.remove('paused');
   score = 0; combo = 0; lives = cfg().MAX_LIVES; isNewRecord = false;
-  perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false; levelLinesOffset = 0;
+  perfectClears = 0; decryptCharges = 0; decryptUsedThisLevel = false;
+  backupCharges = 0; lastBackupThreshold = 0; levelLinesOffset = 0;
   statusText.parentElement.querySelectorAll('.new-record').forEach(el => el.remove());
-  recalcGrid(3);
+  gridProgressionIndex = 0;
+  const [sr, sc] = GRID_PROGRESSION[0];
+  recalcGrid(sr, sc);
+  applyGridTheme(0);
   nameOverlay.classList.remove('active');
+  victoryOverlay.classList.remove('active');
+  lbOverlay.classList.remove('active');
+  lbFromGameOver = false;
+  retryButtons.classList.add('invisible');
   hideScoreModal();
   gameScreen.classList.remove('active');
   splash.classList.remove('hidden');
   updateSplashRecord();
+}
+
+$('btn-exit-menu-pause').addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  doResume();
+  exitToMenu();
+});
+
+// Victory back to menu
+$('victory-btn-menu').addEventListener('click', () => {
+  if (!sfxMuted) audio.click();
+  hitGameCounter();
+  exitToMenu();
 });
 
 // ─── COUNTER HIT ───
@@ -2237,9 +2918,22 @@ async function submitScore(userName, scoreVal) {
 // ─── LEADERBOARD POPUP (SPLASH) ───
 const lbOverlay = $('lb-overlay');
 const lbTable = $('lb-table');
+const lbPersonal = $('lb-personal');
+let lbFromGameOver = false;
 
-function showLeaderboard() {
+function showLeaderboard(fromGameOver) {
+  lbFromGameOver = !!fromGameOver;
   lbTable.innerHTML = '<div class="lb-loading">LOADING...</div>';
+  // Show personal record section if applicable
+  if (fromGameOver && (highScore > 0 || highLevel > 0)) {
+    let pHtml = '<div class="lb-personal-title">YOUR PERSONAL BEST</div>';
+    pHtml += `<div class="lb-personal-score">${highScore.toLocaleString()}</div>`;
+    if (highLevel > 0) pHtml += `<div class="lb-personal-level">LEVEL ${highLevel}</div>`;
+    lbPersonal.innerHTML = pHtml;
+    lbPersonal.style.display = '';
+  } else {
+    lbPersonal.style.display = 'none';
+  }
   lbOverlay.classList.add('active');
   fetchTopScores(10).then(data => {
     if (!data || !Array.isArray(data) || data.length === 0) {
@@ -2272,12 +2966,17 @@ $('btn-leaderboard').addEventListener('click', () => {
   if (!sfxMuted) { audio.init(); audio.click(); }
   showLeaderboard();
 });
-$('lb-close').addEventListener('click', () => {
+function closeLeaderboard() {
   if (!sfxMuted) audio.click();
   lbOverlay.classList.remove('active');
-});
+  if (lbFromGameOver) {
+    retryButtons.classList.remove('invisible');
+    lbFromGameOver = false;
+  }
+}
+$('lb-close').addEventListener('click', closeLeaderboard);
 lbOverlay.addEventListener('click', (e) => {
-  if (e.target === lbOverlay) lbOverlay.classList.remove('active');
+  if (e.target === lbOverlay) closeLeaderboard();
 });
 
 // ─── NAME ENTRY (GAME OVER) ───
@@ -2316,7 +3015,6 @@ function handleKeyPress(key) {
   if (key === 'DEL') {
     nameValue = nameValue.slice(0, -1);
   } else if (key === 'NUM') {
-    // Toggle number row
     numMode = !numMode;
     renderKeyboard();
   } else if (nameValue.length < NAME_MAX) {
@@ -2385,8 +3083,7 @@ function showNameEntry(finalScore, finalLevel) {
 
 function hideNameEntry() {
   nameOverlay.classList.remove('active');
-  btnRetry.classList.remove('invisible');
-  btnRetry.textContent = 'RETRY';
+  showLeaderboard(true);
 }
 
 nameBtnSubmit.addEventListener('click', async () => {
@@ -2457,11 +3154,12 @@ function init() {
   sfxMuted = localStorage.getItem('ph-sfx-muted') === '1';
   musicMuted = localStorage.getItem('ph-music-muted') === '1';
   difficulty = localStorage.getItem('ph-difficulty') || 'normal';
+  patternSpeed = localStorage.getItem('ph-pattern-speed') || 'medium';
   $('diff-practice').classList.toggle('active', difficulty === 'practice');
   $('diff-easy').classList.toggle('active', difficulty === 'easy');
   $('diff-normal').classList.toggle('active', difficulty === 'normal');
-  updateSfxButtons();
-  updateMusicButtons();
+  updateSettingsToggles();
+  updateSpeedSelector();
   loadHighScore();
   updateInstructions();
   createGrid();
