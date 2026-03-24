@@ -216,9 +216,62 @@
   .btn-repeat:hover:not(.inactive) { border-color: #00ddff; color: #00ddff; }
   .btn-repeat:disabled { opacity: 0.2; cursor: not-allowed; }
   .btn-main.invisible { visibility: hidden; pointer-events: none; }
-  .retry-buttons { display: flex; gap: 8px; width: 100%; }
-  .retry-buttons.invisible { visibility: hidden; pointer-events: none; }
-  .retry-half { flex: 1; padding: 14px 0; min-width: 0; }
+
+  /* Game Over overlay */
+  .gameover-overlay {
+    display: none;
+    position: absolute; inset: 0; z-index: 105;
+    background: rgba(0,0,0,0.85);
+    align-items: center; justify-content: center;
+    animation: overlayIn 0.3s ease-out;
+  }
+  .gameover-overlay.active { display: flex; }
+  .gameover-panel {
+    background: linear-gradient(170deg, #0a1a10 0%, #0d2218 50%, #081510 100%);
+    border: 1px solid #ff335544;
+    border-radius: 8px;
+    padding: 28px 32px 24px;
+    width: 88%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 0 40px #ff335522, 0 0 80px #ff335511, inset 0 0 30px #ff335508;
+    animation: panelIn 0.4s ease-out;
+    position: relative;
+    overflow: hidden;
+  }
+  .gameover-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,51,85,0.02) 2px, rgba(255,51,85,0.02) 4px);
+    pointer-events: none;
+  }
+  .gameover-title {
+    font-size: 1.2rem; font-weight: 700; letter-spacing: 0.3em;
+    color: #ff3355; text-shadow: 0 0 20px #ff335566;
+    margin-bottom: 4px;
+  }
+  .gameover-sub {
+    font-size: 0.7rem; color: #ff335566; letter-spacing: 0.15em;
+    margin-bottom: 8px;
+  }
+  .gameover-btn {
+    width: 100%;
+    background: transparent; border: 2px solid #00ff88; border-radius: 6px;
+    padding: 14px 0; cursor: pointer; color: #00ff88;
+    font-size: 0.95rem; font-weight: 700; letter-spacing: 0.2em;
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    text-shadow: 0 0 10px #00ff8866;
+    transition: all 0.2s;
+  }
+  .gameover-btn:hover { filter: brightness(1.2); }
+  .gameover-btn:active { transform: scale(0.96); }
+  .gameover-btn.menu-btn {
+    border-color: #ff335588; color: #ff3355;
+    text-shadow: 0 0 10px #ff335544;
+  }
 
   /* Decrypt button */
   .btn-decrypt {
@@ -910,10 +963,13 @@
       <div class="btn-backup-display" id="btn-backup">BACKUP: 0</div>
       <button class="btn-pause-rect" id="btn-pause">PAUSE</button>
     </div>
-    <div class="bottom-bar" id="retry-bar" style="height:auto;padding-bottom:8px">
-      <div class="retry-buttons invisible" id="retry-buttons">
-        <button class="btn-main retry-half" id="btn-retry">RETRY</button>
-        <button class="btn-main retry-half" id="btn-menu-gameover" style="border-color:#ff335588;color:#ff3355;text-shadow:0 0 10px #ff335544">MAIN MENU</button>
+    <!-- Game Over overlay -->
+    <div class="gameover-overlay" id="gameover-overlay">
+      <div class="gameover-panel">
+        <div class="gameover-title">GAME OVER</div>
+        <div class="gameover-sub">SYSTEM BREACH FAILED</div>
+        <button class="gameover-btn" id="btn-retry">RETRY</button>
+        <button class="gameover-btn menu-btn" id="btn-menu-gameover">MAIN MENU</button>
       </div>
     </div>
 
@@ -1252,7 +1308,7 @@ function initMusic() {
   if (musicAudio) return;
   musicAudio = new Audio('music.mp3');
   musicAudio.loop = true;
-  musicAudio.volume = 0.25;
+  musicAudio.volume = 0.125;
 }
 function playMusic() {
   initMusic();
@@ -1555,7 +1611,7 @@ const bonusInfo = $('bonus-info');
 const statusText = $('status-text');
 const progressDots = $('progress-dots');
 const btnRetry = $('btn-retry');
-const retryButtons = $('retry-buttons');
+const gameoverOverlay = $('gameover-overlay');
 const btnMenuGameover = $('btn-menu-gameover');
 const btnRepeat = $('btn-repeat');
 const btnDecrypt = $('btn-decrypt');
@@ -2006,7 +2062,7 @@ function showPatternSequence(pat, onComplete) {
   updateBonusInfo();
   updateDecryptButton();
   btnRepeat.classList.add('inactive');
-  retryButtons.classList.add('invisible');
+  gameoverOverlay.classList.remove('active');
   timerDisplay.classList.add('invisible');
   btnPause.disabled = true; btnPause.style.opacity = '0.3';
 
@@ -2437,7 +2493,7 @@ function handleFail(idx) {
     updateHud();
     if (difficulty === 'easy' || difficulty === 'practice') {
       setTimeout(() => {
-        retryButtons.classList.remove('invisible');
+        gameoverOverlay.classList.add('active');
       }, 1200);
     } else {
       setTimeout(() => showNameEntry(score, level), 1200);
@@ -2748,7 +2804,7 @@ btnRetry.addEventListener('click', () => {
   recalcGrid(sr, sc);
   createGrid();
   applyGridTheme(0);
-  retryButtons.classList.add('invisible');
+  gameoverOverlay.classList.remove('active');
   nameOverlay.classList.remove('active');
   victoryOverlay.classList.remove('active');
   lbOverlay.classList.remove('active');
@@ -2761,7 +2817,7 @@ btnRetry.addEventListener('click', () => {
 btnMenuGameover.addEventListener('click', () => {
   if (!sfxMuted) audio.click();
   lbOverlay.classList.remove('active');
-  retryButtons.classList.add('invisible');
+  gameoverOverlay.classList.remove('active');
   exitToMenu();
 });
 btnRepeat.addEventListener('click', handleRepeat);
@@ -2856,7 +2912,7 @@ function exitToMenu() {
   victoryOverlay.classList.remove('active');
   lbOverlay.classList.remove('active');
   lbFromGameOver = false;
-  retryButtons.classList.add('invisible');
+  gameoverOverlay.classList.remove('active');
   hideScoreModal();
   gameScreen.classList.remove('active');
   splash.classList.remove('hidden');
@@ -2970,7 +3026,7 @@ function closeLeaderboard() {
   if (!sfxMuted) audio.click();
   lbOverlay.classList.remove('active');
   if (lbFromGameOver) {
-    retryButtons.classList.remove('invisible');
+    gameoverOverlay.classList.add('active');
     lbFromGameOver = false;
   }
 }
