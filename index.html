@@ -48,7 +48,7 @@
   .grid-bg-pattern.active { opacity: 1; }
   .anon-mask-bg {
     position: absolute; inset: 0;
-    pointer-events: none; z-index: 2;
+    pointer-events: none; z-index: 0;
     background: url('anonymous.jpg') center center / contain no-repeat;
     mix-blend-mode: screen;
     opacity: 0.04;
@@ -867,7 +867,7 @@
 
   <!-- SPLASH SCREEN -->
   <div id="splash">
-    <div style="position:absolute;top:8px;left:10px;font-size:0.55rem;color:#00ff8844;letter-spacing:0.1em;font-family:'Courier New',monospace">v0.51</div>
+    <div style="position:absolute;top:8px;left:10px;font-size:0.55rem;color:#00ff8844;letter-spacing:0.1em;font-family:'Courier New',monospace">v0.52</div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
       <div class="logo-icon">
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
@@ -1638,6 +1638,7 @@ let nodeEls = [];
 function createGrid() {
   nodeEls.forEach(n => n.remove());
   nodeEls = [];
+  gridSvg.innerHTML = '';
   const maxDim = Math.max(gridRows, gridCols);
   const nodeSizePct = Math.max(5.5, 48 / maxDim);
   const maxPx = Math.round(160 / maxDim);
@@ -2462,44 +2463,7 @@ function handleFail(idx) {
   gridContainer.style.animation = 'shakeX 0.4s ease-out';
   setTimeout(() => gridContainer.style.animation = '', 400);
 
-  if (lives <= 0 && !cfg().INFINITE_LIVES) {
-    combo = 0;
-    updateCombo();
-    state = 'gameover';
-    if (!sfxMuted) audio.fail();
-    haptic([100, 50, 150]);
-    saveHighLevel(level);
-    hitGameCounter();
-
-    statusText.innerHTML = '';
-    glitchText(statusText, 'SYSTEM BREACH FAILED');
-    statusText.style.color = '#ff3355';
-
-    if (score > highScore) {
-      highScore = score;
-      isNewRecord = true;
-      saveHighScore(score);
-    }
-
-    setTimeout(() => {
-      if (isNewRecord) {
-        const rec = document.createElement('div');
-        rec.className = 'new-record';
-        rec.style.color = '#ffcc00';
-        rec.textContent = `\u2605 NEW RECORD: ${highScore.toLocaleString()} \u2605`;
-        statusText.parentElement.appendChild(rec);
-      }
-    }, 300);
-
-    updateHud();
-    if (difficulty === 'easy' || difficulty === 'practice') {
-      setTimeout(() => {
-        gameoverOverlay.classList.add('active');
-      }, 1200);
-    } else {
-      setTimeout(() => showNameEntry(score, level), 1200);
-    }
-  } else if (backupCharges > 0) {
+  if (backupCharges > 0) {
     // System Backup activates - no life lost, restore and continue
     if (!cfg().INFINITE_LIVES) {
       lives++; // undo the life loss from above
@@ -2567,6 +2531,43 @@ function handleFail(idx) {
       updateBonusInfo();
       for (let n = 0; n < nodes; n++) nodeEls[n].style.cursor = 'pointer';
     }, 1500);
+  } else if (lives <= 0 && !cfg().INFINITE_LIVES) {
+    combo = 0;
+    updateCombo();
+    state = 'gameover';
+    if (!sfxMuted) audio.fail();
+    haptic([100, 50, 150]);
+    saveHighLevel(level);
+    hitGameCounter();
+
+    statusText.innerHTML = '';
+    glitchText(statusText, 'SYSTEM BREACH FAILED');
+    statusText.style.color = '#ff3355';
+
+    if (score > highScore) {
+      highScore = score;
+      isNewRecord = true;
+      saveHighScore(score);
+    }
+
+    setTimeout(() => {
+      if (isNewRecord) {
+        const rec = document.createElement('div');
+        rec.className = 'new-record';
+        rec.style.color = '#ffcc00';
+        rec.textContent = `\u2605 NEW RECORD: ${highScore.toLocaleString()} \u2605`;
+        statusText.parentElement.appendChild(rec);
+      }
+    }, 300);
+
+    updateHud();
+    if (difficulty === 'easy' || difficulty === 'practice') {
+      setTimeout(() => {
+        gameoverOverlay.classList.add('active');
+      }, 1200);
+    } else {
+      setTimeout(() => showNameEntry(score, level), 1200);
+    }
   } else {
     combo = 0;
     updateCombo();
