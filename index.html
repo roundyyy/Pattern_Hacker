@@ -61,6 +61,7 @@
   .record-badge {
     padding: 6px 18px; border: 1px solid #ffcc0066; border-radius: 4px;
     color: #ffcc00; font-size: 0.85rem; letter-spacing: 0.15em; text-shadow: 0 0 8px #ffcc0044;
+    text-align: center; line-height: 1.5;
   }
   .record-badge.invisible { visibility: hidden; }
 
@@ -387,6 +388,7 @@
   }
   .diff-btn:hover:not(.active) { color: #00ff88aa; background: #00ff8808; }
   .diff-btn.easy.active { background: #00ddff22; color: #00ddff; text-shadow: 0 0 8px #00ddff44; border-color: #00ddff44; }
+  .diff-btn.practice.active { background: #ff66ff22; color: #ff66ff; text-shadow: 0 0 8px #ff66ff44; border-color: #ff66ff44; }
   .difficulty-label {
     font-size: 0.55rem; color: #00ff8866; letter-spacing: 0.2em; text-align: center;
   }
@@ -619,10 +621,11 @@
       Each level adds one more line.<br>
       You have 3 lives. Be fast for bonus points!
     </p>
-    <div class="record-badge invisible" id="splash-record">BEST: <span id="splash-record-val">0</span></div>
+    <div class="record-badge invisible" id="splash-record">BEST: <span id="splash-record-val">0</span><br><span id="splash-level-val" style="font-size:0.7rem;color:#00ddff;text-shadow:0 0 8px #00ddff44"></span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
       <div class="difficulty-label">DIFFICULTY</div>
       <div class="difficulty-toggle" id="difficulty-toggle">
+        <button class="diff-btn practice" id="diff-practice" data-diff="practice">PRACTICE</button>
         <button class="diff-btn easy" id="diff-easy" data-diff="easy">EASY</button>
         <button class="diff-btn active" id="diff-normal" data-diff="normal">NORMAL</button>
       </div>
@@ -740,7 +743,7 @@
 
 <script>
 // ─── CONFIG ───
-let difficulty = 'normal'; // 'easy' or 'normal'
+let difficulty = 'normal'; // 'practice', 'easy' or 'normal'
 
 const CONFIG = {
   normal: {
@@ -758,6 +761,8 @@ const CONFIG = {
     PREFER_STRAIGHT: false,
     EXTRA_LINES: 1,
     MAX_REPEATS: 1,
+    INFINITE_LIVES: false,
+    NO_TIMER: false,
   },
   easy: {
     MAX_GRID_SIZE: 6,
@@ -774,6 +779,26 @@ const CONFIG = {
     PREFER_STRAIGHT: true,
     EXTRA_LINES: 0,
     MAX_REPEATS: 2,
+    INFINITE_LIVES: false,
+    NO_TIMER: false,
+  },
+  practice: {
+    MAX_GRID_SIZE: 6,
+    SHOW_DELAY_BASE: 900,
+    SHOW_DELAY_MIN: 500,
+    SHOW_DELAY_DECAY: 15,
+    MAX_LIVES: 3,
+    BASE_TIME_LIMIT: 999,
+    TIME_PER_NODE: 0,
+    TIME_DECAY_PER_LEVEL: 0,
+    FAR_CHANCE_BASE: 0.05,
+    FAR_CHANCE_PER_LEVEL: 0.03,
+    FAR_CHANCE_MAX: 0.4,
+    PREFER_STRAIGHT: true,
+    EXTRA_LINES: 0,
+    MAX_REPEATS: 99,
+    INFINITE_LIVES: true,
+    NO_TIMER: true,
   }
 };
 
@@ -782,9 +807,6 @@ function cfg() { return CONFIG[difficulty]; }
 const PERFECT_TIME_RATIO = 0.4;
 const DECRYPT_EVERY_N_PERFECT = 3;
 const DECRYPT_HINT_NODES = 3;
-
-const OVERLAP_COLOR_SHOW = '#ff66ff';
-const OVERLAP_COLOR_USER = '#ff66ff';
 
 // ─── DYNAMIC GRID STATE ───
 let gridSize = 3;
@@ -969,33 +991,29 @@ function updateSfxButtons() {
 }
 
 // ─── HIGH SCORE ───
+let highLevel = 0;
+
 function highScoreKey() {
+  if (difficulty === 'practice') return 'ph-highscore-practice';
   return difficulty === 'easy' ? 'ph-highscore-easy' : 'ph-highscore';
+}
+function highLevelKey() {
+  if (difficulty === 'practice') return 'ph-highlevel-practice';
+  return difficulty === 'easy' ? 'ph-highlevel-easy' : 'ph-highlevel';
 }
 function loadHighScore() {
   try { highScore = parseInt(localStorage.getItem(highScoreKey()) || '0', 10) || 0; } catch {}
+  try { highLevel = parseInt(localStorage.getItem(highLevelKey()) || '0', 10) || 0; } catch {}
   updateSplashRecord();
 }
 function saveHighScore(val) {
   try { localStorage.setItem(highScoreKey(), String(val)); } catch {}
 }
-
-// ─── SEGMENT OVERLAP DETECTION ───
-function segmentKey(a, b) {
-  return a < b ? `${a}-${b}` : `${b}-${a}`;
-}
-
-function findOverlappingSegments(pat) {
-  const counts = {};
-  for (let i = 1; i < pat.length; i++) {
-    const key = segmentKey(pat[i - 1], pat[i]);
-    counts[key] = (counts[key] || 0) + 1;
+function saveHighLevel(lvl) {
+  if (lvl > highLevel) {
+    highLevel = lvl;
+    try { localStorage.setItem(highLevelKey(), String(lvl)); } catch {}
   }
-  const overlaps = new Set();
-  for (const [key, count] of Object.entries(counts)) {
-    if (count > 1) overlaps.add(key);
-  }
-  return overlaps;
 }
 
 // ─── PATTERN GENERATION ───
@@ -1060,20 +1078,20 @@ function generatePattern(numLines) {
 }
 
 // ─── GRID EXPANSION CHECK ───
-function checkGridExpansion() {
+function checkGridWillExpand() {
   if (gridSize >= cfg().MAX_GRID_SIZE) return false;
   const uniqueNodes = new Set(pattern);
-  if (uniqueNodes.size >= nodes) {
-    levelLinesOffset = level; // reset line count so next level starts with 2 lines
-    recalcGrid(gridSize + 1);
-    createGrid();
-    updateGridHud();
-    showGridExpandNotification();
-    if (!sfxMuted) audio.gridExpand();
-    haptic([50, 30, 50, 30, 80]);
-    return true;
-  }
-  return false;
+  return uniqueNodes.size >= nodes;
+}
+
+function applyGridExpansion() {
+  levelLinesOffset = level;
+  recalcGrid(gridSize + 1);
+  createGrid();
+  updateGridHud();
+  showGridExpandNotification();
+  if (!sfxMuted) audio.gridExpand();
+  haptic([50, 30, 50, 30, 80]);
 }
 
 function showGridExpandNotification() {
@@ -1183,41 +1201,15 @@ function resetAllNodes() {
   for (let i = 0; i < nodes; i++) updateNode(i);
 }
 
-function renderLines(segments, baseColor, overlapColor, overlaps, width = 3, opacity = 1) {
+function renderLines(segments, baseColor, width = 3, opacity = 1) {
   let html = '';
-  const drawn = {};
-
   segments.forEach(([from, to]) => {
     const a = getNodeCenter(from);
     const b = getNodeCenter(to);
     html += `<line x1="${a.x}%" y1="${a.y}%" x2="${b.x}%" y2="${b.y}%"
       stroke="${baseColor}" stroke-width="${width}" stroke-linecap="round" opacity="${opacity}"
       style="filter:drop-shadow(0 0 4px ${baseColor})"/>`;
-    const key = segmentKey(from, to);
-    drawn[key] = (drawn[key] || 0) + 1;
   });
-
-  const overlapDrawn = {};
-  segments.forEach(([from, to]) => {
-    const key = segmentKey(from, to);
-    if (!overlaps.has(key)) return;
-    const count = overlapDrawn[key] || 0;
-    overlapDrawn[key] = count + 1;
-    if (count === 0) return;
-    const a = getNodeCenter(from);
-    const b = getNodeCenter(to);
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const offset = 2.5 * count;
-    const ox = (-dy / len) * offset;
-    const oy = (dx / len) * offset;
-    html += `<line x1="${a.x + ox}%" y1="${a.y + oy}%" x2="${b.x + ox}%" y2="${b.y + oy}%"
-      stroke="${overlapColor}" stroke-width="${width + 1}" stroke-linecap="round" opacity="${opacity}"
-      stroke-dasharray="6 4"
-      style="filter:drop-shadow(0 0 6px ${overlapColor})"/>`;
-  });
-
   return html;
 }
 
@@ -1233,21 +1225,17 @@ function renderDragTrail() {
 function renderSvg() {
   let svg = '';
   if (state === 'showing') {
-    const overlaps = findOverlappingSegments(pattern);
-    svg += renderLines(shownLineSegments, '#00ddff', OVERLAP_COLOR_SHOW, overlaps, 3, 0.9);
+    svg += renderLines(shownLineSegments, '#00ddff', 3, 0.9);
   } else if (state === 'input' || state === 'success') {
-    const overlaps = findOverlappingSegments(pattern);
-    svg += renderLines(userLineSegments, '#00ff88', OVERLAP_COLOR_USER, overlaps, 3, 0.9);
+    svg += renderLines(userLineSegments, '#00ff88', 3, 0.9);
     svg += renderDragTrail();
   } else if (state === 'fail' || state === 'gameover' || state === 'ghost') {
     const correctSegs = [];
     for (let i = 1; i < pattern.length; i++) correctSegs.push([pattern[i-1], pattern[i]]);
-    const overlaps = findOverlappingSegments(pattern);
-    svg += renderLines(correctSegs, '#ff3355', '#cc2266', overlaps, 2, 0.3);
-    svg += renderLines(userLineSegments, '#ff3355', '#cc2266', overlaps, 3, 0.6);
-    // Ghost lines
+    svg += renderLines(correctSegs, '#ff3355', 2, 0.3);
+    svg += renderLines(userLineSegments, '#ff3355', 3, 0.6);
     if (state === 'ghost' && ghostLineSegments.length > 0) {
-      svg += renderLines(ghostLineSegments, '#00ddff', '#00ddff', new Set(), 3, 0.7);
+      svg += renderLines(ghostLineSegments, '#00ddff', 3, 0.7);
     }
   }
   gridSvg.innerHTML = svg;
@@ -1258,9 +1246,13 @@ let ghostLineSegments = [];
 
 function updateLives() {
   let html = '';
-  const maxDisplay = Math.max(cfg().MAX_LIVES, lives);
-  for (let i = 0; i < maxDisplay; i++) {
-    html += `<span class="life ${i >= lives ? 'lost' : ''}">&#x1F49A;</span>`;
+  if (cfg().INFINITE_LIVES) {
+    html = '<span style="font-size:0.7rem;color:#ff66ff88;letter-spacing:0.15em">INFINITE</span>';
+  } else {
+    const maxDisplay = Math.max(cfg().MAX_LIVES, lives);
+    for (let i = 0; i < maxDisplay; i++) {
+      html += `<span class="life ${i >= lives ? 'lost' : ''}">&#x1F49A;</span>`;
+    }
   }
   livesDisplay.innerHTML = html;
 }
@@ -1272,7 +1264,7 @@ function updateHud() {
   updateGridHud();
   const colors = { showing: '#00ddff', success: '#00ff88', fail: '#ff3355', gameover: '#ff3355' };
   hudLevel.style.color = colors[state] || '#00ff88';
-  $('mode-badge').textContent = difficulty === 'easy' ? 'EASY MODE' : '';
+  $('mode-badge').textContent = difficulty === 'practice' ? 'PRACTICE MODE' : difficulty === 'easy' ? 'EASY MODE' : '';
 }
 
 function updateProgressDots() {
@@ -1316,14 +1308,14 @@ function updateCombo() {
 function updateBonusInfo() {
   if (combo > 1 && state === 'input') {
     bonusInfo.classList.remove('invisible');
-    bonusInfo.textContent = `COMBO x${combo} | SPEED BONUS ACTIVE`;
+    bonusInfo.textContent = cfg().NO_TIMER ? `COMBO x${combo}` : `COMBO x${combo} | SPEED BONUS ACTIVE`;
   } else {
     bonusInfo.classList.add('invisible');
   }
 }
 
 function updateDecryptButton() {
-  if (decryptCharges > 0 && state === 'input' && userPattern.length === 0 && !decryptUsedThisLevel) {
+  if (decryptCharges > 0 && state === 'input' && userPattern.length < pattern.length) {
     btnDecrypt.classList.remove('invisible');
     btnDecrypt.disabled = false;
     btnDecrypt.textContent = `DECRYPT (${decryptCharges})`;
@@ -1359,6 +1351,12 @@ function getTimeLimitForLevel(lvl) {
 
 function startTimer() {
   stopTimer();
+  if (cfg().NO_TIMER) {
+    timerDisplay.classList.add('invisible');
+    timeLimitForLevel = 999;
+    timeRemaining = 999;
+    return;
+  }
   timeLimitForLevel = getTimeLimitForLevel(level);
   timeRemaining = timeLimitForLevel;
   timerDisplay.classList.remove('invisible', 'warning', 'danger');
@@ -1437,30 +1435,33 @@ function showScoreModal({ levelNum, baseScore, comboMultiplier, comboScore, time
   if (comboMultiplier > 1) {
     const comboBonus = comboScore - baseScore;
     html += `<div class="score-row" style="${d(100)}">
-      <span class="score-row-label">COMBO x${comboMultiplier}</span>
+      <span class="score-row-label">COMBO x${comboMultiplier.toFixed(1)}</span>
       <span class="score-row-value yellow">+${comboBonus.toLocaleString()}</span>
     </div>`;
   }
 
-  html += `<div class="score-row" style="${d(100)}">
-    <span class="score-row-label">TIME</span>
-    <span class="score-row-value cyan">${timeUsed.toFixed(1)}s / ${timeLimit.toFixed(1)}s</span>
-  </div>`;
-
-  const tbColor = timeBonusLabel === 'PERFECT' ? 'pink' : timeBonusLabel === 'FAST' ? 'yellow' : timeBonusLabel === 'GOOD' ? 'cyan' : 'green';
-  html += `<div class="score-row" style="${d(100)}">
-    <span class="score-row-label">SPEED ${timeBonusLabel}</span>
-    <span class="score-row-value ${tbColor}">+${timeBonusPoints.toLocaleString()}</span>
-  </div>`;
-
-  if (gridExpanded) {
+  if (!cfg().NO_TIMER) {
     html += `<div class="score-row" style="${d(100)}">
-      <span class="score-row-label">GRID UPGRADE</span>
-      <span class="score-row-value cyan">${gridSize}x${gridSize}</span>
+      <span class="score-row-label">TIME</span>
+      <span class="score-row-value cyan">${timeUsed.toFixed(1)}s / ${timeLimit.toFixed(1)}s</span>
+    </div>`;
+
+    const tbColor = timeBonusLabel === 'PERFECT' ? 'pink' : timeBonusLabel === 'FAST' ? 'yellow' : timeBonusLabel === 'GOOD' ? 'cyan' : 'green';
+    html += `<div class="score-row" style="${d(100)}">
+      <span class="score-row-label">SPEED ${timeBonusLabel}</span>
+      <span class="score-row-value ${tbColor}">+${timeBonusPoints.toLocaleString()}</span>
     </div>`;
   }
 
-  if (earnedExtraLife) {
+  if (gridExpanded) {
+    const newGs = gridSize + 1;
+    html += `<div class="score-row" style="${d(100)}">
+      <span class="score-row-label">GRID UPGRADE</span>
+      <span class="score-row-value cyan">${newGs}x${newGs}</span>
+    </div>`;
+  }
+
+  if (earnedExtraLife && !cfg().INFINITE_LIVES) {
     html += `<div class="score-row" style="${d(100)}">
       <span class="score-row-label">BONUS LIFE</span>
       <span class="score-row-value green">+1 &#x1F49A;</span>
@@ -1592,24 +1593,30 @@ function enterInputState() {
 
 // ─── DECRYPT POWER-UP ───
 function handleDecrypt() {
-  if (state !== 'input' || decryptCharges <= 0 || userPattern.length > 0 || decryptUsedThisLevel) return;
+  if (state !== 'input' || decryptCharges <= 0 || userPattern.length >= pattern.length) return;
   decryptCharges--;
   decryptUsedThisLevel = true;
   if (!sfxMuted) audio.decrypt();
   haptic(30);
 
-  const hintCount = Math.min(DECRYPT_HINT_NODES, pattern.length);
+  const startIdx = userPattern.length;
+  const remaining = pattern.length - startIdx;
+  const hintCount = Math.min(DECRYPT_HINT_NODES, remaining);
   let hintIdx = 0;
 
   function applyNextHint() {
     if (hintIdx >= hintCount) {
       updateDecryptButton();
+      if (userPattern.length === pattern.length) {
+        handleSuccess();
+      }
       return;
     }
-    const nodeIdx = pattern[hintIdx];
+    const patternIdx = startIdx + hintIdx;
+    const nodeIdx = pattern[patternIdx];
     userPattern.push(nodeIdx);
-    if (hintIdx > 0) {
-      userLineSegments.push([pattern[hintIdx - 1], nodeIdx]);
+    if (patternIdx > 0) {
+      userLineSegments.push([pattern[patternIdx - 1], nodeIdx]);
     }
     updateNode(nodeIdx, {
       color: '#ffcc00', border: '#ffcc00', scale: 1.15,
@@ -1698,98 +1705,108 @@ function handleNodeClick(idx) {
   updateDecryptButton();
 
   if (userPattern.length === pattern.length) {
-    // SUCCESS
-    stopTimer();
-    dragTrailActive = false;
-    state = 'success';
-    btnPause.disabled = true; btnPause.style.opacity = '0.3';
-    const newCombo = combo + 1;
-    combo = newCombo;
-
-    const timeUsed = timeLimitForLevel - timeRemaining;
-    const timeBonusPoints = calculateTimeBonusPoints();
-    const timeBonusLabel = getTimeBonusLabel(timeRemaining, timeLimitForLevel);
-    const baseScore = level * 100;
-    const comboMultiplier = newCombo;
-    const comboScore = Math.round(baseScore * comboMultiplier);
-    const levelScore = comboScore + timeBonusPoints;
-    score += levelScore;
-
-    // Track perfect clears for decrypt charges
-    if (!repeatUsed && !decryptUsedThisLevel) {
-      perfectClears++;
-      if (perfectClears >= DECRYPT_EVERY_N_PERFECT) {
-        perfectClears = 0;
-        decryptCharges++;
-      }
-    } else {
-      perfectClears = 0;
-    }
-
-    // Extra life every 3 levels
-    let earnedExtraLife = false;
-    if (level % 3 === 0 && lives < cfg().MAX_LIVES + 3) {
-      lives++;
-      earnedExtraLife = true;
-      updateLives();
-    }
-
-    const uniqueNodes = [...new Set(pattern)];
-    uniqueNodes.forEach(n => updateNode(n, {
-      color: '#00ff88', border: '#00ff88', scale: 1,
-      glow: '0 0 16px #00ff88', innerColor: '#00ff88'
-    }));
-
-    if (!sfxMuted) audio.success();
-
-    // Combo milestone flash
-    if (newCombo >= 10 && newCombo % 5 === 0) triggerComboFlash(10);
-    else if (newCombo === 5) triggerComboFlash(5);
-    else if (newCombo === 3) triggerComboFlash(3);
-
-    glitchText(statusText, 'ACCESS GRANTED');
-    statusText.style.color = '#00ff88';
-
-    let isNewRec = false;
-    if (score > highScore) {
-      highScore = score;
-      isNewRecord = true;
-      isNewRec = true;
-      saveHighScore(score);
-      if (!sfxMuted) setTimeout(() => audio.newRecord(), 400);
-    } else if (!sfxMuted) {
-      setTimeout(() => audio.levelUp(), 300);
-    }
-
-    updateHud();
-    updateCombo();
-    btnRepeat.classList.add('invisible');
-    btnDecrypt.classList.add('invisible');
-    timerDisplay.classList.add('invisible');
-
-    // Check grid expansion
-    const gridExpanded = checkGridExpansion();
-
-    setTimeout(() => {
-      showScoreModal({
-        levelNum: level,
-        baseScore,
-        comboMultiplier,
-        comboScore,
-        timeBonusPoints,
-        timeBonusLabel,
-        totalScore: levelScore,
-        timeUsed,
-        timeLimit: timeLimitForLevel,
-        newRecord: isNewRec,
-        gridExpanded,
-        earnedExtraLife,
-        onContinue: () => {
-          startLevel(level + 1);
-        }
-      });
-    }, 800);
+    handleSuccess();
   }
+}
+
+// ─── SUCCESS HANDLER ───
+function handleSuccess() {
+  stopTimer();
+  dragTrailActive = false;
+  state = 'success';
+  btnPause.disabled = true; btnPause.style.opacity = '0.3';
+  const newCombo = combo + 1;
+  combo = newCombo;
+
+  const timeUsed = timeLimitForLevel - timeRemaining;
+  const timeBonusPoints = calculateTimeBonusPoints();
+  const timeBonusLabel = getTimeBonusLabel(timeRemaining, timeLimitForLevel);
+  const baseScore = level * 100;
+  // Diminishing-returns combo: sqrt curve keeps combo meaningful but not dominant
+  const comboMultiplier = 1 + 0.5 * Math.sqrt(newCombo - 1);
+  const comboScore = Math.round(baseScore * comboMultiplier);
+  const levelScore = comboScore + timeBonusPoints;
+  score += levelScore;
+
+  // Track perfect clears for decrypt charges
+  if (!repeatUsed && !decryptUsedThisLevel) {
+    perfectClears++;
+    if (perfectClears >= DECRYPT_EVERY_N_PERFECT) {
+      perfectClears = 0;
+      decryptCharges++;
+    }
+  } else {
+    perfectClears = 0;
+  }
+
+  // Extra life every 3 levels
+  let earnedExtraLife = false;
+  if (level % 3 === 0 && lives < cfg().MAX_LIVES + 3) {
+    lives++;
+    earnedExtraLife = true;
+    updateLives();
+  }
+
+  const uniqueNodes = [...new Set(pattern)];
+  uniqueNodes.forEach(n => updateNode(n, {
+    color: '#00ff88', border: '#00ff88', scale: 1,
+    glow: '0 0 16px #00ff88', innerColor: '#00ff88'
+  }));
+
+  if (!sfxMuted) audio.success();
+
+  // Combo milestone flash
+  if (newCombo >= 10 && newCombo % 5 === 0) triggerComboFlash(10);
+  else if (newCombo === 5) triggerComboFlash(5);
+  else if (newCombo === 3) triggerComboFlash(3);
+
+  glitchText(statusText, 'ACCESS GRANTED');
+  statusText.style.color = '#00ff88';
+
+  saveHighLevel(level);
+
+  let isNewRec = false;
+  if (score > highScore) {
+    highScore = score;
+    isNewRecord = true;
+    isNewRec = true;
+    saveHighScore(score);
+    if (!sfxMuted) setTimeout(() => audio.newRecord(), 400);
+  } else if (!sfxMuted) {
+    setTimeout(() => audio.levelUp(), 300);
+  }
+
+  updateHud();
+  updateCombo();
+  btnRepeat.classList.add('invisible');
+  btnDecrypt.classList.add('invisible');
+  timerDisplay.classList.add('invisible');
+
+  // Check if grid should expand, but defer the actual expansion
+  const willExpand = checkGridWillExpand();
+
+  setTimeout(() => {
+    showScoreModal({
+      levelNum: level,
+      baseScore,
+      comboMultiplier,
+      comboScore,
+      timeBonusPoints,
+      timeBonusLabel,
+      totalScore: levelScore,
+      timeUsed,
+      timeLimit: timeLimitForLevel,
+      newRecord: isNewRec,
+      gridExpanded: willExpand,
+      earnedExtraLife,
+      onContinue: () => {
+        if (willExpand) {
+          applyGridExpansion();
+        }
+        startLevel(level + 1);
+      }
+    });
+  }, 800);
 }
 
 // ─── GHOST REPLAY ───
@@ -1838,7 +1855,9 @@ function showGhostReplay(fromIndex, onComplete) {
 function handleFail(idx) {
   stopTimer();
   dragTrailActive = false;
-  lives--;
+  if (!cfg().INFINITE_LIVES) {
+    lives--;
+  }
   updateLives();
   btnPause.disabled = true; btnPause.style.opacity = '0.3';
 
@@ -1869,10 +1888,11 @@ function handleFail(idx) {
   gridContainer.style.animation = 'shakeX 0.4s ease-out';
   setTimeout(() => gridContainer.style.animation = '', 400);
 
-  if (lives <= 0) {
+  if (lives <= 0 && !cfg().INFINITE_LIVES) {
     state = 'gameover';
     if (!sfxMuted) audio.fail();
     haptic([100, 50, 150]);
+    saveHighLevel(level);
     hitGameCounter();
 
     statusText.innerHTML = '';
@@ -1896,13 +1916,13 @@ function handleFail(idx) {
     }, 300);
 
     updateHud();
-    if (difficulty === 'easy') {
+    if (difficulty === 'easy' || difficulty === 'practice') {
       setTimeout(() => {
         btnRetry.classList.remove('invisible');
         btnRetry.textContent = 'RETRY';
       }, 1200);
     } else {
-      setTimeout(() => showNameEntry(score), 1200);
+      setTimeout(() => showNameEntry(score, level), 1200);
     }
   } else {
     state = 'fail';
@@ -1910,7 +1930,7 @@ function handleFail(idx) {
     haptic([50, 30, 100]);
 
     statusText.innerHTML = '';
-    glitchText(statusText, `ACCESS DENIED \u2014 ${lives} ${lives === 1 ? 'LIFE' : 'LIVES'} LEFT`);
+    glitchText(statusText, `ACCESS DENIED - ${lives} ${lives === 1 ? 'LIFE' : 'LIVES'} LEFT`);
     statusText.style.color = '#ff3355';
 
     updateHud();
@@ -1918,7 +1938,6 @@ function handleFail(idx) {
     // Ghost replay: show what was missing from last correct node
     const lastCorrectIdx = userPattern.length;
     if (lastCorrectIdx > 0 && lastCorrectIdx < pattern.length) {
-      // Start ghost from the last node the user got right
       showTimer = setTimeout(() => {
         showGhostReplay(lastCorrectIdx - 1, () => {
           resetAllNodes();
@@ -1929,7 +1948,6 @@ function handleFail(idx) {
         });
       }, 1500);
     } else {
-      // User got 0 nodes or somehow completed - just re-show
       showTimer = setTimeout(() => {
         resetAllNodes();
         renderSvg();
@@ -2188,9 +2206,11 @@ function hitGameCounter() {
 function updateSplashRecord() {
   const badge = $('splash-record');
   const val = $('splash-record-val');
-  if (highScore > 0) {
+  const lvlVal = $('splash-level-val');
+  if (highScore > 0 || highLevel > 0) {
     badge.classList.remove('invisible');
     val.textContent = highScore.toLocaleString();
+    lvlVal.textContent = highLevel > 0 ? `LEVEL ${highLevel}` : '';
   } else {
     badge.classList.add('invisible');
   }
@@ -2346,10 +2366,10 @@ nameKb.addEventListener('click', (e) => {
   if (key) handleKeyPress(key.dataset.key);
 });
 
-function showNameEntry(finalScore) {
+function showNameEntry(finalScore, finalLevel) {
   nameValue = localStorage.getItem('ph-player-name') || '';
   numMode = false;
-  nameScoreDisplay.textContent = `SCORE: ${finalScore.toLocaleString()}`;
+  nameScoreDisplay.textContent = `SCORE: ${finalScore.toLocaleString()}  |  LEVEL: ${finalLevel}`;
   nameUploadStatus.textContent = '';
   nameUploadStatus.style.color = '';
   nameBtnSubmit.disabled = nameValue.trim().length === 0;
@@ -2400,6 +2420,7 @@ nameBtnSkip.addEventListener('click', () => {
 function setDifficulty(diff) {
   difficulty = diff;
   localStorage.setItem('ph-difficulty', diff);
+  $('diff-practice').classList.toggle('active', diff === 'practice');
   $('diff-easy').classList.toggle('active', diff === 'easy');
   $('diff-normal').classList.toggle('active', diff === 'normal');
   loadHighScore();
@@ -2408,13 +2429,19 @@ function setDifficulty(diff) {
 
 function updateInstructions() {
   const el = $('instructions-text');
-  if (difficulty === 'easy') {
+  if (difficulty === 'practice') {
+    el.innerHTML = 'Watch the lines. Repeat the pattern.<br>No timer. Infinite lives. No leaderboard.<br>Just practice and learn!';
+  } else if (difficulty === 'easy') {
     el.innerHTML = 'Watch the lines. Repeat the pattern.<br>Each level adds one more line.<br>You have 5 lives.';
   } else {
     el.innerHTML = 'Watch the lines. Repeat the pattern.<br>Each level adds one more line.<br>You have 3 lives. Be fast for bonus points!';
   }
 }
 
+$('diff-practice').addEventListener('click', () => {
+  if (!sfxMuted) { audio.init(); audio.click(); }
+  setDifficulty('practice');
+});
 $('diff-easy').addEventListener('click', () => {
   if (!sfxMuted) { audio.init(); audio.click(); }
   setDifficulty('easy');
@@ -2429,6 +2456,7 @@ function init() {
   sfxMuted = localStorage.getItem('ph-sfx-muted') === '1';
   musicMuted = localStorage.getItem('ph-music-muted') === '1';
   difficulty = localStorage.getItem('ph-difficulty') || 'normal';
+  $('diff-practice').classList.toggle('active', difficulty === 'practice');
   $('diff-easy').classList.toggle('active', difficulty === 'easy');
   $('diff-normal').classList.toggle('active', difficulty === 'normal');
   updateSfxButtons();
